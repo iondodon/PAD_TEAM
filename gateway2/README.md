@@ -5,6 +5,15 @@ useful links:
 
 
 Steps to run elk stack gateway2:
+1. $ cd
+2. $ docker-compose up
+3. Go to localhost:5601 (wait for it to start)
+4. login with credentials from docker-elk/logstash/pipeline/logstash.conf
+5. Access the logger as in example from Test_elk_logger.ipynb or gateway2.py
+
+
+
+Old instructions - Steps to run elk stack gateway2:
 1. $ cd docker-elk/
 2. $ docker-compose up
 3. Go to localhost:5601 (wait for it to start)
