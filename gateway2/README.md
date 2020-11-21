@@ -3,8 +3,13 @@ useful links:
 - elk stack python : https://medium.com/swlh/python-async-logging-to-an-elk-stack-35498432cb0a
 - docker-elk: https://github.com/deviantony/docker-elk
 
+### Steps to run docker with gateway2 and elk stack:
+``` $ docker build -t flask-gateway . ```
+``` $ docker-compose up ```
 
-Steps to run elk stack gateway2:
+
+
+### Steps to run elk stack gateway2:
 1. $ cd
 2. $ docker-compose up
 3. Go to localhost:5601 (wait for it to start)
@@ -13,9 +18,22 @@ Steps to run elk stack gateway2:
 
 
 
-Old instructions - Steps to run elk stack gateway2:
+### Old instructions - Steps to run elk stack gateway2:
 1. $ cd docker-elk/
 2. $ docker-compose up
 3. Go to localhost:5601 (wait for it to start)
 4. login with credentials from logstash/pipeline/logstash.conf
 5. Access the logger as in example from Test_elk_logger.ipynb or gatewa2.py
+
+
+### Warnings and Problem solving
+- if problem with apturl, this is a specific package to Ubuntu, so in docker it works without, on Ubuntu without docker it might not work
+
+- to stop redis server locally on Ubuntu:
+```$ /etc/init.d/redis-server stop ```
+- to start redis server locally on Ubuntu:
+```$ /etc/init.d/redis-server start ```
+
+### Running in docker-compose gateway with elk stack:
+- in code in flask set logger host to be name of the service, in this case logstash
+- add same network elk (maybe doesn't help as much as the previous point)

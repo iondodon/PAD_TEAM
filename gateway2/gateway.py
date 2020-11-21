@@ -14,7 +14,9 @@ from logstash_async.handler import AsynchronousLogstashHandler
 import time
 
 # Setup elk stack
-host_logger = 'localhost'
+# host_logger = 'localhost'
+host_logger = 'logstash'
+# host_logger = 'elk'
 port_logger = 5000
 
 # Get you a test logger
