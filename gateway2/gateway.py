@@ -12,6 +12,8 @@ from termcolor import colored
 import logging
 from logstash_async.handler import AsynchronousLogstashHandler
 import time
+from time import strftime, gmtime
+
 
 app = Flask(__name__)
 # app.config['FLASK_ENV'] = "development"
@@ -46,7 +48,9 @@ load_balancer = LoadBalancer()
 
 @app.route('/')
 def index():
-    test_logger.info("Hello from flask at %s", time.time())
+    # test_logger.info("Hello from flask at %s", time.time())
+    test_logger.info("Hello from flask at %s", strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+
     return "Hello!"
 
 @app.route('/<path>', methods=['GET', 'POST'])
@@ -109,7 +113,7 @@ def router(path):
         data = request.data
 
     # print("DATA", data)
-    test_logger.debug({"Request data": data})
+    test_logger.debug("Request data: " + str(data))
 
     parameters = {
         # "path": request.path,
@@ -117,7 +121,7 @@ def router(path):
         "parameters": data
     }
 
-    test_logger.debug({"parameters": parameters})
+    test_logger.debug("Parameters " + str(parameters))
     # print(colored("parameters:", "magenta"), parameters)
 
     circuit_breaker = load_balancer.next(redis_cache, service_type)
