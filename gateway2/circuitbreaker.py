@@ -4,6 +4,7 @@ from termcolor import colored
 from jsonrpcclient import request as rpc_request
 import json
 from flask import abort
+import logging
 
 
 class CircuitBreaker:

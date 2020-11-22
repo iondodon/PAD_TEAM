@@ -13,6 +13,12 @@ import logging
 from logstash_async.handler import AsynchronousLogstashHandler
 import time
 
+app = Flask(__name__)
+# app.config['FLASK_ENV'] = "development"
+app.config['DEBUG'] = True
+
+
+
 # Setup elk stack
 # host_logger = 'localhost'
 host_logger = 'logstash'
@@ -34,7 +40,6 @@ redis_cache = redis.Redis(host='redis', port=6379, db=0)
 load_balancer = LoadBalancer()
 
 
-app = Flask(__name__)
 
 @app.route('/')
 def index():
@@ -43,6 +48,8 @@ def index():
 
 @app.route('/<path>', methods=['GET', 'POST'])
 def router(path):    
+    test_logger.info("----Request to path:" + path)
+    
     print(colored("----Request to path:" + path, "yellow"))
     # NOTE: RPC works only with underscore(_) request, but new feature added that gateway can process both _ and - request, so we allow both
     map_service_type_paths = {
@@ -72,6 +79,7 @@ def router(path):
     allowed_paths = map_service_type_paths.keys()
 
     if path not in allowed_paths:
+        test_logger.error("Page not found. Path " + path + " is not in allowed paths.")
         return abort(404)
 
 
@@ -85,7 +93,8 @@ def router(path):
         service_type = "type2"
 
     if not load_balancer.any_available(redis_cache, service_type):
-    	# 503 Service Unavailable
+        # 503 Service Unavailable
+        test_logger.error("No service of type " + service_type + " available")
         return abort(503, {"error": "No services available"})
 
     if request.method == 'GET':
@@ -126,6 +135,7 @@ def service_register():
     if service_type not in ["type1", "type2"]:
         # return {"status":"error", "message": "service_type should be type1 or type2"}
         # 400 bad request
+        test_logger.error("Service type " + str(service_type) + " not recognized. Service type should be type1 or type2")
         return abort(400, {"error": "service_type should be type1 or type2"})
 
     print(colored("service name:", "red"), service_name)
@@ -137,7 +147,8 @@ def service_register():
 
         return {"status": "success", "message": "Service registered"}
     except:
-    	return abort(500, {"error:", "ERROR! Service not registered. Somethig went wrong"})
+        test_logger.error("Service " + str(service_name) + "  not registered. Somethig went wrong")
+        return abort(500, {"error:", "ERROR! Service not registered. Somethig went wrong"})
 
 
 
@@ -151,6 +162,7 @@ def get_registered_services():
     result_type1 = [x for x in l_type1]
     result_type2 = [x for x in l_type2]
 
+    test_logger.info({"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)})
     return {"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)}
 
 

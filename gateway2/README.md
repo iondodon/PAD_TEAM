@@ -6,6 +6,9 @@ useful links:
 ### Steps to run docker with gateway2 and elk stack:
 ``` $ docker build -t flask-gateway . ```
 ``` $ docker-compose up ```
+or 
+``` $ docker-compose up --force-recreate```
+
 
 
 
@@ -37,3 +40,7 @@ useful links:
 ### Running in docker-compose gateway with elk stack:
 - in code in flask set logger host to be name of the service, in this case logstash
 - add same network elk (maybe doesn't help as much as the previous point)
+
+### Useful resources for logging:
+- https://docs.python.org/3/howto/logging.html
+- https://www.scalyr.com/blog/the-10-commandments-of-logging/

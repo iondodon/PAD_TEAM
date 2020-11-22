@@ -85,11 +85,13 @@ services:
   flask-gateway:
     image: flask-gateway:latest
     container_name: gateway2
+    environment:
+      FLASK_ENV: development
     ports:
       - 5003:5003
     expose: [5003]
-    # wait 2 minutes for elk stack then run gateway
-    command: bash -c "sleep 120 && python -u gateway.py"
+    # wait 15 seconds for for elk stack then run gateway
+    command: bash -c "sleep 15 && python -u gateway.py"
 
     depends_on:
       - redis_cache
