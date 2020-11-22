@@ -36,7 +36,10 @@ test_logger.addHandler(async_handler)
 
 
 # Setup Redis cache
-redis_cache = redis.Redis(host='redis', port=6379, db=0)
+# redis_cache = redis.Redis(host='redis', port=6379, db=0)
+redis_cache = redis.Redis(host='redis', port=6380, db=0)
+# name of host from docker-compose
+# redis_cache = redis.Redis(host='redis_cache', port=6379, db=0)
 load_balancer = LoadBalancer()
 
 
@@ -49,8 +52,8 @@ def index():
 @app.route('/<path>', methods=['GET', 'POST'])
 def router(path):    
     test_logger.info("----Request to path:" + path)
-    
-    print(colored("----Request to path:" + path, "yellow"))
+    # print(colored("----Request to path:" + path, "yellow"))
+
     # NOTE: RPC works only with underscore(_) request, but new feature added that gateway can process both _ and - request, so we allow both
     map_service_type_paths = {
         "init-student" : "type1",
@@ -79,7 +82,7 @@ def router(path):
     allowed_paths = map_service_type_paths.keys()
 
     if path not in allowed_paths:
-        test_logger.error("Page not found. Path " + path + " is not in allowed paths.")
+        test_logger.error("ERROR: Page not found. Path " + path + " is not in allowed paths.")
         return abort(404)
 
 
@@ -94,7 +97,7 @@ def router(path):
 
     if not load_balancer.any_available(redis_cache, service_type):
         # 503 Service Unavailable
-        test_logger.error("No service of type " + service_type + " available")
+        test_logger.error("ERROR: No service of type " + service_type + " available")
         return abort(503, {"error": "No services available"})
 
     if request.method == 'GET':
@@ -105,7 +108,8 @@ def router(path):
     else:
         data = request.data
 
-    print("DATA", data)
+    # print("DATA", data)
+    test_logger.debug({"Request data": data})
 
     parameters = {
         # "path": request.path,
@@ -113,7 +117,8 @@ def router(path):
         "parameters": data
     }
 
-    print(colored("parameters:", "magenta"), parameters)
+    test_logger.debug({"parameters": parameters})
+    # print(colored("parameters:", "magenta"), parameters)
 
     circuit_breaker = load_balancer.next(redis_cache, service_type)
     service_response = circuit_breaker.request(redis_cache, parameters, request.method)
@@ -124,9 +129,10 @@ def router(path):
 
 @app.route('/service-register', methods=['POST'])
 def service_register():    
-    print(request.data)
-    print(request.json)
-    print("Service discovered!")
+    # print(request.data)
+    # print(request.json)
+    test_logger.info("Service discovered!")
+    # print("Service discovered!")
 
     service_name = request.json["service_name"]
     service_address = request.json["address"]
@@ -135,19 +141,25 @@ def service_register():
     if service_type not in ["type1", "type2"]:
         # return {"status":"error", "message": "service_type should be type1 or type2"}
         # 400 bad request
-        test_logger.error("Service type " + str(service_type) + " not recognized. Service type should be type1 or type2")
+        test_logger.error("ERROR: Service type " + str(service_type) + " not recognized. Service type should be type1 or type2")
         return abort(400, {"error": "service_type should be type1 or type2"})
 
-    print(colored("service name:", "red"), service_name)
-    print(colored("service address:", "red"), service_address)
-    print(colored("service type:", "red"), service_type)
-    
+    test_logger.debug("service name: " + str(service_name))
+    test_logger.debug("service address: " + str(service_address))
+    test_logger.debug("service type: " + str(service_type))
+    # print(colored("service name:", "red"), service_name)
+    # print(colored("service address:", "red"), service_address)
+    # print(colored("service type:", "red"), service_type)
+  
     try:
         redis_cache.lpush("services-" + str(service_type), service_address)
-
+        test_logger.info("Service " + str(service_name) 
+                                    + "of type " + str(service_type) 
+                                    + " with address " + str(service_address) 
+                                    + " registered!")
         return {"status": "success", "message": "Service registered"}
     except:
-        test_logger.error("Service " + str(service_name) + "  not registered. Somethig went wrong")
+        test_logger.error("ERROR: Service " + str(service_name) + "  not registered. Somethig went wrong")
         return abort(500, {"error:", "ERROR! Service not registered. Somethig went wrong"})
 
 

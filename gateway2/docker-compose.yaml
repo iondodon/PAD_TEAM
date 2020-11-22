@@ -72,15 +72,18 @@ services:
     depends_on:
       - elasticsearch
 
-  redis_cache:
-    container_name: redis_cache
+  redis:
+    container_name: redis
+    command: --port 6380
     image: "redis:alpine"
     restart: always
     ports:
-      - 6379:6379
-    expose: [6379]
+      - 6380:6380
+    expose: [6380]
     environment:
       - REDIS_URL=redis://cache
+    networks:
+      - elk
 
   flask-gateway:
     image: flask-gateway:latest
@@ -94,16 +97,11 @@ services:
     command: bash -c "sleep 15 && python -u gateway.py"
 
     depends_on:
-      - redis_cache
+      - redis
       - elasticsearch
       - logstash
       - kibana
 
-    healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:5601"]
-        interval: 40s
-        timeout: 10s
-        retries: 10
     networks:
       - elk
 
