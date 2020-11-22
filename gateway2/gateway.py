@@ -16,7 +16,7 @@ from time import strftime, gmtime
 
 
 app = Flask(__name__)
-# app.config['FLASK_ENV'] = "development"
+# if this is set to false and in docker flask_env is not development, the "debug" logging will not be shown
 app.config['DEBUG'] = True
 
 

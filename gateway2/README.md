@@ -6,10 +6,10 @@ useful links:
 ### Steps to run docker with gateway2 and elk stack:
 ``` $ docker build -t flask-gateway . ```
 ``` $ docker-compose up ```
-or 
-``` $ docker-compose up --force-recreate```
 
-
+### Logging
+if you don't want to see debug level logs in elk, then change variable "FLASK_ENV" not to be development and
+in gateway.py set app.config["DEBUG"] to False
 
 
 ### Steps to run elk stack gateway2:
