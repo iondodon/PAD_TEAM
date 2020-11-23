@@ -1,13 +1,55 @@
-#!/usr/bin/env python3
-
 import socket
+import sys
+from time import sleep
 
-HOST = '127.0.0.1'  # The server's hostname or IP address
-PORT = 65432        # The port used by the server
+# Create a TCP/IP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect((HOST, PORT))
-    s.sendall(b'Hello, world')
-    data = s.recv(1024)
+# Connect the socket to the port where the server is listening
+server_address = ('localhost', 6666)
+print (sys.stderr, 'connecting to %s port %s' % server_address)
+sock.connect(server_address)
 
-print('Received', repr(data))
+
+try:
+    # Send data
+    message = b'SET test 1\n'
+    print(sys.stderr, 'sending "%s"' % message)
+    # sock.sendall(message)
+    sock.send(message)
+
+    sleep(1)
+
+    # Look for the response
+    amount_received = 0
+    amount_expected = 1
+    
+    while amount_received < amount_expected:
+        data = sock.recv(16)
+        amount_received += len(data)
+        print(sys.stderr, 'received "%s"' % data)
+
+    sleep(1)
+
+    # Send data
+    message = b'GET test \n'
+    print(sys.stderr, 'sending "%s"' % message)
+    # sock.sendall(message)
+    sock.send(message)
+
+    sleep(1)
+
+    # Look for the response
+    amount_received = 0
+    amount_expected = 1
+    
+    while amount_received < amount_expected:
+        data = sock.recv(16)
+        amount_received += len(data)
+        print(sys.stderr, 'received "%s"' % data)
+
+    sleep(5)
+finally:
+    print(sys.stderr, 'closing socket')
+    sock.close()
+
