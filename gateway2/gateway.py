@@ -44,6 +44,8 @@ redis_cache = redis.Redis(host='redis', port=6380, db=0)
 # redis_cache = redis.Redis(host='redis_cache', port=6379, db=0)
 load_balancer = LoadBalancer()
 
+# socketuri
+# 'http://cache-master:6666/'
 
 
 @app.route('/')
