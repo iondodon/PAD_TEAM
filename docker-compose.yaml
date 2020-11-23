@@ -3,12 +3,12 @@ version: '3.2'
 services:
   elasticsearch:
     build:
-      context: docker-elk/elasticsearch/
+      context: gateway2/docker-elk/elasticsearch/
       args:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./docker-elk/elasticsearch/config/elasticsearch.yml
+        source: ./gateway2/docker-elk/elasticsearch/config/elasticsearch.yml
         target: /usr/share/elasticsearch/config/elasticsearch.yml
         read_only: true
       - type: volume
@@ -28,16 +28,16 @@ services:
 
   logstash:
     build:
-      context: docker-elk/logstash/
+      context: gateway2/docker-elk/logstash/
       args:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./docker-elk/logstash/config/logstash.yml
+        source: ./gateway2/docker-elk/logstash/config/logstash.yml
         target: /usr/share/logstash/config/logstash.yml
         read_only: true
       - type: bind
-        source: ./docker-elk/logstash/pipeline
+        source: ./gateway2/docker-elk/logstash/pipeline
         target: /usr/share/logstash/pipeline
         read_only: true
     ports:
@@ -57,12 +57,12 @@ services:
 
   kibana:
     build:
-      context: docker-elk/kibana/
+      context: gateway2/docker-elk/kibana/
       args:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./docker-elk/kibana/config/kibana.yml
+        source: ./gateway2/docker-elk/kibana/config/kibana.yml
         target: /usr/share/kibana/config/kibana.yml
         read_only: true
     ports:
@@ -94,6 +94,28 @@ services:
     restart: always
     ports:
         - 6666:6666
+        
+  cache-slave1-replica1:
+    build: ./cache-slave
+    container_name: pbl-cache-slave1-replica1
+    tty: true
+    volumes: 
+        - ./cache-slave:/cache-slave
+    restart: always
+    depends_on: [cache-master]
+    environment:
+        - SLAVE_NAME=slave1
+
+  cache-slave2-replica1:
+    build: ./cache-slave
+    container_name: pbl-cache-slave2-replica1
+    tty: true
+    volumes: 
+        - ./cache-slave:/cache-slave
+    restart: always
+    depends_on: [cache-master]
+    environment:
+        - SLAVE_NAME=slave2
 
 
   flask-gateway:
@@ -105,7 +127,7 @@ services:
       - 5003:5003
     expose: [5003]
     # wait 15 seconds for for elk stack then run gateway
-    command: bash -c "sleep 15 && python -u gateway.py"
+    command: bash -c "cd gateway2 && sleep 15 && python -u gateway.py"
 
     depends_on:
       - redis
