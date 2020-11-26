@@ -1,5 +1,8 @@
 import redis
 import os
+import socket
+import sys
+from time import sleep
 
 class CacheDriver(object):
     """Driver for the cache using singleton design pattern"""
@@ -14,8 +17,17 @@ class CacheDriver(object):
                 self.init_redis_cache()
 
         def init_custom_cache(self):
-            # TODO
-            pass
+            # Create a TCP/IP socket
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+            custom_cache_host = os.environ.get("CUSTOM_CACHE_HOST", 'localhost')
+            custom_cache_port = os.environ.get("CUSTOM_CACHE_PORT", 6666)
+
+            # Connect the socket to the port where the server is listening
+            server_address = (custom_cache_host, custom_cache_port)
+            print (sys.stderr, 'connecting to %s port %s' % server_address)
+            self.sock.connect(server_address)
+
 
         def init_redis_cache(self):
             """Setup Redis cache"""
@@ -34,11 +46,37 @@ class CacheDriver(object):
         def do(self, command, args):
             """ Perform a command to the cache with the required arguments in the form of a list"""
             if self.cache_type=='custom':
-                # TODO
-                pass
+                 # Send data
+                message_command = command.upper()
+                for arg in args:
+                    message_command += " " + str(arg)
+                message_command += "\n"
+
+                message = b(message_command)
+                print(sys.stderr, 'sending "%s"' % message)
+
+                self.sock.send(message)
+
+                sleep(1)
+
+                # Look for the response
+                amount_received = 0
+                amount_expected = 1
+                
+                while amount_received < amount_expected:
+                    data = self.sock.recv(16)
+                    amount_received += len(data)
+                    print(sys.stderr, 'received "%s"' % data)
+
+                # TODO: test
+                return data
 
             elif self.cache_type=='redis':
                 return getattr(self.cache, command)(*args)
+
+        def __del__(self):
+            print(sys.stderr, 'closing socket')
+            self.sock.close()
 
 
         def __str__(self):
@@ -55,6 +93,7 @@ class CacheDriver(object):
     def do(self, command, args):
         return CacheDriver.instance.do(command, args)
 
+    
 
 # https://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html
 # Example of singleton class design pattern:

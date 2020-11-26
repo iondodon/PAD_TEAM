@@ -15,6 +15,7 @@ import time
 from time import strftime, gmtime
 
 from cache_driver import CacheDriver
+import os
 
 app = Flask(__name__)
 # if this is set to false and in docker flask_env is not development, the "debug" logging will not be shown
@@ -98,7 +99,8 @@ def router(path):
         service_type = "type2"
 
 
-    redis_cache = CacheDriver('redis')
+    # cache = CacheDriver('redis')
+    cache = CacheDriver('custom')
 
     if not load_balancer.any_available(service_type):
         # 503 Service Unavailable
@@ -157,9 +159,10 @@ def service_register():
     # print(colored("service type:", "red"), service_type)
   
     try:
-        redis_cache = CacheDriver('redis')
-        # redis_cache.lpush("services-" + str(service_type), service_address)
-        redis_cache.do('lpush', ["services-" + str(service_type), service_address])
+        # cache = CacheDriver('redis')
+        cache = CacheDriver('custom')
+
+        cache.do('lpush', ["services-" + str(service_type), service_address])
 
         test_logger.info("Service " + str(service_name) 
                                     + "of type " + str(service_type) 
@@ -175,12 +178,14 @@ def service_register():
 @app.route('/registered-services')
 def get_registered_services():
     result = {}
-    redis_cache = CacheDriver('redis')
 
-    # l_type1 = redis_cache.lrange('services-type1', 0, -1)
-    # l_type2 = redis_cache.lrange('services-type2', 0, -1)
-    l_type1 = redis_cache.do('lrange', ['services-type1', 0, -1])
-    l_type2 = redis_cache.do('lrange', ['services-type2', 0, -1])
+    # cache = CacheDriver('redis')
+    cache = CacheDriver('custom')
+
+    # l_type1 = cache.lrange('services-type1', 0, -1)
+    # l_type2 = cache.lrange('services-type2', 0, -1)
+    l_type1 = cache.do('lrange', ['services-type1', 0, -1])
+    l_type2 = cache.do('lrange', ['services-type2', 0, -1])
     
     result_type1 = [x for x in l_type1]
     result_type2 = [x for x in l_type2]
@@ -192,4 +197,5 @@ def get_registered_services():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5003)
+    gateway_port = os.environ.get("GATEWAY_PORT", 5005)
+    app.run(host='0.0.0.0', debug=True, port=gateway_port)

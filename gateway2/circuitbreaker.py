@@ -40,7 +40,8 @@ class CircuitBreaker:
 
     def request(self, params, method):
 
-        redis_cache = CacheDriver('redis')
+        # redis_cache = CacheDriver('redis')
+        redis_cache = CacheDriver('custom')
 
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
@@ -135,7 +136,8 @@ class CircuitBreaker:
 
 
     def remove_from_cache(self):
-        redis_cache = CacheDriver('redis')
+        # redis_cache = CacheDriver('redis')
+        redis_cache = CacheDriver('custom')
 
         print(colored("Remove service from cache:", "yellow"), self.address)
         test_logger.info("Remove service from cache: " + str(self.address))
