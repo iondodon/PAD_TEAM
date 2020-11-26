@@ -46,9 +46,18 @@ class CacheDriver(object):
         def do(self, command, args):
             """ Perform a command to the cache with the required arguments in the form of a list"""
             if self.cache_type=='custom':
+
                  # Send data
                 message_command = command.upper()
-                for arg in args:
+
+                new_args = args
+                
+                if message_command=='LRANGE':
+                    message_command = 'GET'
+                    new_args = args[:-2]
+
+
+                for arg in new_args:
                     message_command += " " + str(arg)
                 message_command += "\n"
 
@@ -61,12 +70,13 @@ class CacheDriver(object):
 
                 sleep(1)
 
+                data = None
                 # Look for the response
                 amount_received = 0
-                amount_expected = 1
+                amount_expected = 2
                 
-                while amount_received < amount_expected:
-                    data = self.sock.recv(16)
+                while amount_received < amount_expected and (data==None or data.decode('utf-8')!=''):
+                    data = self.sock.recv(1024)
                     amount_received += len(data)
                     print(sys.stderr, 'received "%s"' % data)
                     print("---", data.decode('utf-8'))
