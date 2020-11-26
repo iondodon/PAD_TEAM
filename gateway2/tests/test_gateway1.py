@@ -7,6 +7,7 @@ import pprint
 
 # SERVER_ADDRESS = 'http://127.0.0.1:5000'
 SERVER_ADDRESS = 'http://127.0.0.1:5003'
+# SERVER_ADDRESS = 'http://127.0.0.1:5005'
 pp = pprint.PrettyPrinter(indent=4)
 
 def make_request(method, endpoint, parameters):
@@ -38,9 +39,9 @@ def register_service(service_name, address, service_type):
 
     except Exception as e:
         print(colored("---error in request", "red"), e)
-        print(colored("status code:"+str(r.status_code), "red"))
-        print(colored(str(r), "red"))
-        print(colored(str(r.text), "red"))
+        # print(colored("status code:"+str(r.status_code), "red"))
+        # print(colored(str(r), "red"))
+        # print(colored(str(r.text), "red"))
 
     
 

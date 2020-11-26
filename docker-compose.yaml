@@ -94,6 +94,9 @@ services:
     restart: always
     ports:
         - 6666:6666
+    networks:
+      - elk
+  
         
   cache-slave1-replica1:
     build: ./cache-slave
@@ -105,6 +108,9 @@ services:
     depends_on: [cache-master]
     environment:
         - SLAVE_NAME=slave1
+    networks:
+      - elk
+  
 
   cache-slave2-replica1:
     build: ./cache-slave
@@ -116,6 +122,9 @@ services:
     depends_on: [cache-master]
     environment:
         - SLAVE_NAME=slave2
+    networks:
+      - elk
+  
 
 
   flask-gateway:
@@ -142,6 +151,7 @@ services:
 
     networks:
       - elk
+
 
 networks:
   elk:

@@ -108,7 +108,7 @@ class CircuitBreaker:
         except Exception as e:
 
             # nr_requests_failed = redis_cache.incr(self.get_redis_key())
-            nr_requests_failed = redis_cache.do('incr', [self.get_redis_key()])
+            nr_requests_failed = int(redis_cache.do('incr', [self.get_redis_key()]))
 
             test_logger.error("ERROR: Request failed. " + str(e))
             print(colored("----Request failed:----", "red"), nr_requests_failed)

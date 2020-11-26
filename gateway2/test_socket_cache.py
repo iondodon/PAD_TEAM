@@ -6,10 +6,13 @@ from time import sleep
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connect the socket to the port where the server is listening
-server_address = ('localhost', 6666)
-print (sys.stderr, 'connecting to %s port %s' % server_address)
-sock.connect(server_address)
+custom_cache_host = os.environ.get("CUSTOM_CACHE_HOST", 'localhost')
+custom_cache_port = os.environ.get("CUSTOM_CACHE_PORT", 6666)
 
+# Connect the socket to the port where the server is listening
+server_address = (custom_cache_host, int(custom_cache_port))
+print (sys.stderr, 'connecting to %s port %s' % server_address)
+self.sock.connect(server_address)
 
 try:
     # Send data

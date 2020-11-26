@@ -24,7 +24,7 @@ class CacheDriver(object):
             custom_cache_port = os.environ.get("CUSTOM_CACHE_PORT", 6666)
 
             # Connect the socket to the port where the server is listening
-            server_address = (custom_cache_host, custom_cache_port)
+            server_address = (custom_cache_host, int(custom_cache_port))
             print (sys.stderr, 'connecting to %s port %s' % server_address)
             self.sock.connect(server_address)
 
@@ -52,7 +52,9 @@ class CacheDriver(object):
                     message_command += " " + str(arg)
                 message_command += "\n"
 
-                message = b(message_command)
+                message = bytes(message_command, 'utf-8')
+                # message = bytes(message_command, 'ascii')
+                # message = message_command
                 print(sys.stderr, 'sending "%s"' % message)
 
                 self.sock.send(message)
@@ -67,8 +69,16 @@ class CacheDriver(object):
                     data = self.sock.recv(16)
                     amount_received += len(data)
                     print(sys.stderr, 'received "%s"' % data)
+                    print("---", data.decode('utf-8'))
 
                 # TODO: test
+                data = data.decode('utf-8')
+                data = data.replace(' \r\n \r', '')
+                data_type = data[data.find("(")+1:data.find(")")]
+                if data_type == 'integer':
+                    return int(data[len(data_type)+1:].replace(" ", ''))
+
+                # return data.decode('utf-8')
                 return data
 
             elif self.cache_type=='redis':
