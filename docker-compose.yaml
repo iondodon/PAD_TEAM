@@ -123,11 +123,13 @@ services:
     container_name: gateway2
     environment:
       FLASK_ENV: development
+      REDIS_HOST: redis
+      REDIS_PORT: 6380
     ports:
       - 5003:5003
     expose: [5003]
     # wait 15 seconds for for elk stack then run gateway
-    command: bash -c "cd gateway2 && sleep 15 && python -u gateway.py"
+    command: bash -c "sleep 15 && python -u gateway.py"
 
     depends_on:
       - redis

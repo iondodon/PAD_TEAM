@@ -4,8 +4,11 @@ useful links:
 - docker-elk: https://github.com/deviantony/docker-elk
 
 ### Steps to run docker with gateway2 and elk stack:
-``` $ docker build -t flask-gateway . ```
-``` $ docker-compose up ```
+1. ``` $ docker build -t flask-gateway . ```
+2. ``` $ docker-compose up ```
+3. Go to localhost:5601 (wait for it to start)
+4. login with credentials from docker-elk/logstash/pipeline/logstash.conf
+
 
 ### Logging
 if you don't want to see debug level logs in elk, then change variable "FLASK_ENV" not to be development and

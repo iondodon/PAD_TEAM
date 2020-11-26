@@ -38,12 +38,6 @@ async_handler = AsynchronousLogstashHandler(host_logger, port_logger, database_p
 test_logger.addHandler(async_handler)
 
 
-# # Setup Redis cache
-# # redis_cache = redis.Redis(host='redis', port=6379, db=0)
-# redis_cache = redis.Redis(host='redis', port=6380, db=0)
-# # name of host from docker-compose
-# # redis_cache = redis.Redis(host='redis_cache', port=6379, db=0)
-
 load_balancer = LoadBalancer()
 
 # socketuri
@@ -105,8 +99,8 @@ def router(path):
 
 
     redis_cache = CacheDriver('redis')
-    
-    if not load_balancer.any_available(redis_cache, service_type):
+
+    if not load_balancer.any_available(service_type):
         # 503 Service Unavailable
         test_logger.error("ERROR: No service of type " + service_type + " available")
         return abort(503, {"error": "No services available"})
@@ -131,8 +125,8 @@ def router(path):
     test_logger.debug("Parameters " + str(parameters))
     # print(colored("parameters:", "magenta"), parameters)
 
-    circuit_breaker = load_balancer.next(redis_cache, service_type)
-    service_response = circuit_breaker.request(redis_cache, parameters, request.method)
+    circuit_breaker = load_balancer.next(service_type)
+    service_response = circuit_breaker.request(parameters, request.method)
 
  
     return service_response

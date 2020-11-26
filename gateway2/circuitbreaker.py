@@ -8,6 +8,7 @@ from flask import abort
 import logging
 from logstash_async.handler import AsynchronousLogstashHandler
 
+from cache_driver import CacheDriver
 
 # Setup elk stack
 # host_logger = 'localhost'
@@ -37,7 +38,7 @@ class CircuitBreaker:
         self.service_type = service_type
 
 
-    def request(self, redis_cache, params, method):
+    def request(self, params, method):
 
         redis_cache = CacheDriver('redis')
 
@@ -49,7 +50,7 @@ class CircuitBreaker:
         
 
         if self.tripped:
-            remove_from_cache(redis_cache)
+            self.remove_from_cache()
             raise CustomError("Circuit breaker tripped")
             # 503 - service unavailable
             test_logger.error("ERROR: CircuitBreaker tripped. No services available")
@@ -116,7 +117,7 @@ class CircuitBreaker:
 
 
         if nr_requests_failed >= self.FAILURE_THRESHOLD:
-            self.remove_from_cache(redis_cache)
+            self.remove_from_cache()
             self.tripped = True
 
 
@@ -133,7 +134,9 @@ class CircuitBreaker:
         return "circuit_breaker:" + self.address.decode('utf-8')
 
 
-    def remove_from_cache(self, redis_cache):
+    def remove_from_cache(self):
+        redis_cache = CacheDriver('redis')
+
         print(colored("Remove service from cache:", "yellow"), self.address)
         test_logger.info("Remove service from cache: " + str(self.address))
 
