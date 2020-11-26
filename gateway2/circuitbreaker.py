@@ -39,6 +39,8 @@ class CircuitBreaker:
 
     def request(self, redis_cache, params, method):
 
+        redis_cache = CacheDriver('redis')
+
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
                 + "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in class CircuitBreaker")
@@ -103,7 +105,8 @@ class CircuitBreaker:
                        
         except Exception as e:
 
-            nr_requests_failed = redis_cache.incr(self.get_redis_key())
+            # nr_requests_failed = redis_cache.incr(self.get_redis_key())
+            nr_requests_failed = redis_cache.do('incr', [self.get_redis_key()])
 
             test_logger.error("ERROR: Request failed. " + str(e))
             print(colored("----Request failed:----", "red"), nr_requests_failed)
@@ -134,5 +137,7 @@ class CircuitBreaker:
         print(colored("Remove service from cache:", "yellow"), self.address)
         test_logger.info("Remove service from cache: " + str(self.address))
 
-        redis_cache.lrem("services-"+str(self.service_type), 1, self.address)
-        redis_cache.delete(self.get_redis_key())
+        redis_cache.do('lrem', ["services-"+str(self.service_type), 1, self.address])
+        redis_cache.do('delete', [self.get_redis_key()])
+        # redis_cache.lrem("services-"+str(self.service_type), 1, self.address)
+        # redis_cache.delete(self.get_redis_key())
