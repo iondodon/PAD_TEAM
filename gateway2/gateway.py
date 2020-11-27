@@ -186,9 +186,20 @@ def get_registered_services():
     # l_type2 = cache.lrange('services-type2', 0, -1)
     l_type1 = cache.do('lrange', ['services-type1', 0, -1])
     l_type2 = cache.do('lrange', ['services-type2', 0, -1])
-    
-    result_type1 = [x for x in l_type1]
-    result_type2 = [x for x in l_type2]
+
+    print(colored('--l_type1:', 'blue'), l_type1)
+    print(colored('type l_type1:', 'blue'), type(l_type1))
+    print(colored('--l_type2:', 'blue'), l_type2)
+    print(colored('type l_type2:', 'blue'), type(l_type2))
+
+    result_type1 = []
+    result_type2 = []
+
+    if l_type1:    
+        result_type1 = [x for x in l_type1]
+
+    if l_type2:
+        result_type2 = [x for x in l_type2]
 
     test_logger.info({"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)})
     return {"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)}

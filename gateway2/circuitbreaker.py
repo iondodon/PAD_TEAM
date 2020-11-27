@@ -40,8 +40,8 @@ class CircuitBreaker:
 
     def request(self, params, method):
 
-        # redis_cache = CacheDriver('redis')
-        redis_cache = CacheDriver('custom')
+        # cache = CacheDriver('redis')
+        cache = CacheDriver('custom')
 
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
@@ -58,7 +58,9 @@ class CircuitBreaker:
             return abort(503, {"error": "No services available"})
             # return {"status": "error", "message":"Circuit breaker tripped"}
 
-        endpoint = str(self.address.decode("utf-8") ) + str(params["path"]).replace("/", "")
+        # pentru redis trebuie decode:
+        # endpoint = str(self.address.decode("utf-8") ) + str(params["path"]).replace("/", "")
+        endpoint = str(self.address ) + str(params["path"]).replace("/", "")
 
         print(colored("service endpoint:---" + endpoint, "cyan"))
 
@@ -107,8 +109,11 @@ class CircuitBreaker:
                        
         except Exception as e:
 
-            # nr_requests_failed = redis_cache.incr(self.get_redis_key())
-            nr_requests_failed = int(redis_cache.do('incr', [self.get_redis_key()]))
+            # nr_requests_failed = cache.incr(self.get_redis_key())
+            # nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
+            # nr_requests_failed = int(cache.do('incr', [self.get_redis_key().encode('utf-8'))])
+
+            nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
 
             test_logger.error("ERROR: Request failed. " + str(e))
             print(colored("----Request failed:----", "red"), nr_requests_failed)
@@ -126,23 +131,29 @@ class CircuitBreaker:
         test_logger.error("ERROR: Request to service of type " + str(self.service_type) + " failed")
         return abort(500, {"message":"Request to service failed", "error ":last_error})
 
-
+ 
     def clear(self, address):
         self.address = None
 
 
     def get_redis_key(self):
-        return "circuit_breaker:" + self.address.decode('utf-8')
+        # pentru redis trebuie decode!!!
+        # return "circuit_breaker:" + self.address.decode('utf-8')
+        # return str("circuit_breaker:" + self.address)
+        # return "CB-" + self.address.decode('utf-8')
+        return "CB-" + self.address
 
 
     def remove_from_cache(self):
-        # redis_cache = CacheDriver('redis')
-        redis_cache = CacheDriver('custom')
+        # cache = CacheDriver('redis')
+        cache = CacheDriver('custom')
 
         print(colored("Remove service from cache:", "yellow"), self.address)
         test_logger.info("Remove service from cache: " + str(self.address))
 
-        redis_cache.do('lrem', ["services-"+str(self.service_type), 1, self.address])
-        redis_cache.do('delete', [self.get_redis_key()])
-        # redis_cache.lrem("services-"+str(self.service_type), 1, self.address)
-        # redis_cache.delete(self.get_redis_key())
+        if cache.get_type() == 'redis':
+            cache.do('lrem', ["services-"+str(self.service_type), 1, self.address])
+
+        cache.do('delete', [self.get_redis_key()])
+        # cache.lrem("services-"+str(self.service_type), 1, self.address)
+        # cache.delete(self.get_redis_key())

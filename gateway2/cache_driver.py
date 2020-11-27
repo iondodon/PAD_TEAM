@@ -3,6 +3,7 @@ import os
 import socket
 import sys
 from time import sleep
+from termcolor import colored
 
 class CacheDriver(object):
     """Driver for the cache using singleton design pattern"""
@@ -52,21 +53,31 @@ class CacheDriver(object):
 
                 new_args = args
                 
+                print(colored("Command:", 'red'), command)
+                print(colored("Command type:", 'green'), type(command))
+
                 if message_command=='LRANGE':
                     message_command = 'GET'
                     new_args = args[:-2]
 
+                if message_command=='DELETE':
+                    message_command = 'DEL'
 
                 for arg in new_args:
                     message_command += " " + str(arg)
                 message_command += "\n"
+
 
                 message = bytes(message_command, 'utf-8')
                 # message = bytes(message_command, 'ascii')
                 # message = message_command
                 print(sys.stderr, 'sending "%s"' % message)
 
-                self.sock.send(message)
+                custom_cache_host = os.environ.get("CUSTOM_CACHE_HOST", 'localhost')
+                custom_cache_port = os.environ.get("CUSTOM_CACHE_PORT", 6666)
+                # self.sock.send(message)
+                self.sock.sendto(message_command.encode(),(custom_cache_host, custom_cache_port))
+
 
                 sleep(1)
 
@@ -85,14 +96,54 @@ class CacheDriver(object):
                 data = data.decode('utf-8')
                 data = data.replace(' \r\n \r', '')
                 data_type = data[data.find("(")+1:data.find(")")]
+
+                print(colored("data:", 'blue'), data)
+
+                # data_separated = data[len(data_type)+2:].replace(" ", '').replace('\n', '')
+                data_separated = data[len(data_type)+2:].replace('\n', '').strip()
+                print(colored("data_separated:", 'red'), data_separated)
+
                 if data_type == 'integer':
-                    return int(data[len(data_type)+1:].replace(" ", ''))
+                    return int(data_separated)
+
+                elif data_type=='list':
+                    res = []
+                    res_item = ""
+                    print(colored("data_type:", 'blue'), data_type)
+
+                    for item in data_separated:
+                        if item == " ":
+                            print(colored("res item:", 'yellow'))
+                            res.append(res_item)
+                            res_item = ""
+                        else:
+                            res_item += item
+
+                    # append last item
+                    res.append(res_item)
+
+                    
+                    
+                    print(colored("type data_res:", 'green'), type(res))
+                    print(colored("data_res:", 'green'), res)
+
+                    return [res]
+
+                elif data_type == 'binary':
+
+                    return data_separated.replace('"', "").replace("'", '')
+
+                elif data_type=='atom':
+                    return None
 
                 # return data.decode('utf-8')
-                return data
+                return data_separated
 
             elif self.cache_type=='redis':
                 return getattr(self.cache, command)(*args)
+
+        def get_type(self):
+            return self.cache_type
 
         def __del__(self):
             print(sys.stderr, 'closing socket')
@@ -113,6 +164,8 @@ class CacheDriver(object):
     def do(self, command, args):
         return CacheDriver.instance.do(command, args)
 
+    def get_type(self):
+        return CacheDriver.instance.get_type()
     
 
 # https://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html

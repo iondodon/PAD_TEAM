@@ -6,8 +6,8 @@ import pprint
 
 
 # SERVER_ADDRESS = 'http://127.0.0.1:5000'
-SERVER_ADDRESS = 'http://127.0.0.1:5003'
-# SERVER_ADDRESS = 'http://127.0.0.1:5005'
+# SERVER_ADDRESS = 'http://127.0.0.1:5003'
+SERVER_ADDRESS = 'http://127.0.0.1:5005'
 pp = pprint.PrettyPrinter(indent=4)
 
 def make_request(method, endpoint, parameters):
@@ -95,7 +95,7 @@ def test_gateway_rpc():
 
 # do not forget to change parameter to 'HTTP' in circuitbreaker!
 def test_gateway_http():
-    register_service("Service1", "http://127.0.0.1:6005/", "type1")
+    # register_service("Service1", "http://127.0.0.1:6005/", "type1")
     # register_service("Service1", "http://127.0.0.1:6004/", "type1")
 
     # register_service(service_name="Service2", address="http://127.0.0.1:6004/", service_type="type1")
