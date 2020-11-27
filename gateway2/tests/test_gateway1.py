@@ -6,8 +6,8 @@ import pprint
 
 
 # SERVER_ADDRESS = 'http://127.0.0.1:5000'
-# SERVER_ADDRESS = 'http://127.0.0.1:5003'
-SERVER_ADDRESS = 'http://127.0.0.1:5005'
+SERVER_ADDRESS = 'http://127.0.0.1:5003'
+# SERVER_ADDRESS = 'http://127.0.0.1:5005'
 pp = pprint.PrettyPrinter(indent=4)
 
 def make_request(method, endpoint, parameters):

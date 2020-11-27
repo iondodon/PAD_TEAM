@@ -22,7 +22,7 @@ class CacheDriver(object):
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             custom_cache_host = os.environ.get("CUSTOM_CACHE_HOST", 'localhost')
-            custom_cache_port = os.environ.get("CUSTOM_CACHE_PORT", 6666)
+            custom_cache_port = int(os.environ.get("CUSTOM_CACHE_PORT", 6666))
 
             # Connect the socket to the port where the server is listening
             server_address = (custom_cache_host, int(custom_cache_port))
@@ -74,7 +74,8 @@ class CacheDriver(object):
                 print(sys.stderr, 'sending "%s"' % message)
 
                 custom_cache_host = os.environ.get("CUSTOM_CACHE_HOST", 'localhost')
-                custom_cache_port = os.environ.get("CUSTOM_CACHE_PORT", 6666)
+                custom_cache_port = int(os.environ.get("CUSTOM_CACHE_PORT", 6666))
+                
                 # self.sock.send(message)
                 self.sock.sendto(message_command.encode(),(custom_cache_host, custom_cache_port))
 

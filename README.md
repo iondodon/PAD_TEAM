@@ -1,5 +1,9 @@
 # PAD_TEAM
 
+### To run project:
+``` $ docker-compose up --build```
+
+### Cache commands:
 "SET key value" -> "(atom) ok"
 
 "SETNX key value" -> "(atom) ok"
