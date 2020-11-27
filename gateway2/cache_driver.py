@@ -6,7 +6,9 @@ from time import sleep
 from termcolor import colored
 
 class CacheDriver(object):
-    """Driver for the cache using singleton design pattern"""
+    """Driver for the cache using singleton design pattern slightly modified:
+        It allows only one instance of each cache type, for example 1 redis instance, 1 custom instance
+    """
 
     class __OneCacheDriver:
         def __init__(self, cache_type='redis'):
@@ -124,7 +126,6 @@ class CacheDriver(object):
                     res.append(res_item)
 
                     
-                    
                     print(colored("type data_res:", 'green'), type(res))
                     print(colored("data_res:", 'green'), res)
 
@@ -154,19 +155,22 @@ class CacheDriver(object):
         def __str__(self):
             return repr(self) + " : " + self.cache_type
 
-    instance = None
+    instance = {}
+    cache_type = 'redis'
 
     def __init__(self, cache_type):
-        if not CacheDriver.instance:
-            CacheDriver.instance = CacheDriver.__OneCacheDriver(cache_type)
-        else:
-            CacheDriver.instance.cache_type = cache_type
+        # if not CacheDriver.instance:
+        if not cache_type in CacheDriver.instance:
+            CacheDriver.instance[cache_type] = CacheDriver.__OneCacheDriver(cache_type)
+            self.cache_type = cache_type
+        # else:
+            # CacheDriver.instance[cache_type].cache_type = cache_type
 
     def do(self, command, args):
-        return CacheDriver.instance.do(command, args)
+        return CacheDriver.instance[self.cache_type].do(command, args)
 
-    def get_type(self):
-        return CacheDriver.instance.get_type()
+    # def get_type(self,):
+    #     return CacheDriver.instance[cache_type].get_type()
     
 
 # https://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html

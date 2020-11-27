@@ -40,8 +40,15 @@ class CircuitBreaker:
 
     def request(self, params, method):
 
-        # cache = CacheDriver('redis')
-        cache = CacheDriver('custom')
+        try:
+            redis_cache = CacheDriver('redis')
+        except:
+            test_logger.error("ERROR: Redis cache initialization failed")
+        try:
+            cache = CacheDriver('custom')
+        except:
+            test_logger.error("ERROR: Custom cache initialization failed")
+        
 
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
@@ -113,7 +120,11 @@ class CircuitBreaker:
             # nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
             # nr_requests_failed = int(cache.do('incr', [self.get_redis_key().encode('utf-8'))])
 
-            nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
+            try:
+                nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
+            except:
+                test_logger.error("ERROR: Custom cache incr command failed")
+                nr_requests_failed = int(redis_cache.do('incr', [self.get_redis_key()]))
 
             test_logger.error("ERROR: Request failed. " + str(e))
             print(colored("----Request failed:----", "red"), nr_requests_failed)
@@ -145,15 +156,28 @@ class CircuitBreaker:
 
 
     def remove_from_cache(self):
-        # cache = CacheDriver('redis')
-        cache = CacheDriver('custom')
+        try:
+            redis_cache = CacheDriver('redis')
+        except:
+            test_logger.error("ERROR: Redis cache initialization failed")
+        try:
+            cache = CacheDriver('custom')
+        except:
+            test_logger.error("ERROR: Custom cache initialization failed")
+        
 
         print(colored("Remove service from cache:", "yellow"), self.address)
         test_logger.info("Remove service from cache: " + str(self.address))
 
-        if cache.get_type() == 'redis':
-            cache.do('lrem', ["services-"+str(self.service_type), 1, self.address])
 
-        cache.do('delete', [self.get_redis_key()])
+        
+        try:
+            cache.do('delete', [self.get_redis_key()])
+        except:
+            test_logger.error("ERROR: Custom cache delete command failed")
+
+            redis_cache.do('lrem', ["services-"+str(self.service_type), 1, self.address])
+            redis_cache.do('delete', [self.get_redis_key()])
+
         # cache.lrem("services-"+str(self.service_type), 1, self.address)
         # cache.delete(self.get_redis_key())

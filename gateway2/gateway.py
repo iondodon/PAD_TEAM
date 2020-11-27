@@ -98,10 +98,6 @@ def router(path):
         path = "status"
         service_type = "type2"
 
-
-    # cache = CacheDriver('redis')
-    cache = CacheDriver('custom')
-
     if not load_balancer.any_available(service_type):
         # 503 Service Unavailable
         test_logger.error("ERROR: No service of type " + service_type + " available")
@@ -160,9 +156,22 @@ def service_register():
   
     try:
         # cache = CacheDriver('redis')
-        cache = CacheDriver('custom')
+        try:
+            redis_cache = CacheDriver('redis')
+        except:
+            test_logger.error("ERROR: Redis cache initialization failed")
+        try:
+            cache = CacheDriver('custom')
+        except:
+            test_logger.error("ERROR: Custom cache initialization failed")
+        
+        try:
+            cache.do('lpush', ["services-" + str(service_type), service_address])
+        except:
+            test_logger.error("ERROR: Custom cache lpush command failed")
 
-        cache.do('lpush', ["services-" + str(service_type), service_address])
+            redis_cache.do('lpush', ["services-" + str(service_type), service_address])
+
 
         test_logger.info("Service " + str(service_name) 
                                     + "of type " + str(service_type) 
@@ -179,13 +188,25 @@ def service_register():
 def get_registered_services():
     result = {}
 
-    # cache = CacheDriver('redis')
-    cache = CacheDriver('custom')
+    try:
+        redis_cache = CacheDriver('redis')
+    except:
+        test_logger.error("ERROR: Redis cache initialization failed")
+    try:
+        cache = CacheDriver('custom')
+    except:
+        test_logger.error("ERROR: Custom cache initialization failed")
 
     # l_type1 = cache.lrange('services-type1', 0, -1)
     # l_type2 = cache.lrange('services-type2', 0, -1)
-    l_type1 = cache.do('lrange', ['services-type1', 0, -1])
-    l_type2 = cache.do('lrange', ['services-type2', 0, -1])
+    try:
+        l_type1 = cache.do('lrange', ['services-type1', 0, -1])
+        l_type2 = cache.do('lrange', ['services-type2', 0, -1])
+    except:
+        test_logger.error("ERROR: Custom cache lrange command failed")
+
+        l_type1 = redis_cache.do('lrange', ['services-type1', 0, -1])
+        l_type2 = redis_cache.do('lrange', ['services-type2', 0, -1])
 
     print(colored('--l_type1:', 'blue'), l_type1)
     print(colored('type l_type1:', 'blue'), type(l_type1))
