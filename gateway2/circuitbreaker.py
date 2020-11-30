@@ -152,7 +152,12 @@ class CircuitBreaker:
         # return "circuit_breaker:" + self.address.decode('utf-8')
         # return str("circuit_breaker:" + self.address)
         # return "CB-" + self.address.decode('utf-8')
-        return "CB-" + self.address
+        
+        try:
+            self.address = self.address.decode()
+            return "CB-" + self.address
+        except (UnicodeDecodeError, AttributeError):
+            return "CB-" + self.address
 
 
     def remove_from_cache(self):

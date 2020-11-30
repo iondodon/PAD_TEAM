@@ -26,7 +26,6 @@ app.config['DEBUG'] = True
 # Setup elk stack
 # host_logger = 'localhost'
 host_logger = 'logstash'
-# host_logger = 'elk'
 port_logger = 5000
 
 # Get you a test logger
@@ -38,17 +37,21 @@ async_handler = AsynchronousLogstashHandler(host_logger, port_logger, database_p
 # Add the handler to the logger
 test_logger.addHandler(async_handler)
 
-
+# Initialize load balancer
 load_balancer = LoadBalancer()
 
-# socketuri
-# 'http://cache-master:6666/'
 
+###### Define possible cache statuses#####
+SUCCESS = 1
+CUSTOM_CACHE_FAILED = 2
+REDIS_CACHE_FAILED = 3
+BOTH_CACHES_FAILED = 4
+##########################################
 
 @app.route('/')
 def index():
     # test_logger.info("Hello from flask at %s", time.time())
-    test_logger.info("Hello from flask at %s", strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    test_logger.info("Hello from flask at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
 
     return "Hello!"
 
@@ -58,6 +61,7 @@ def router(path):
     # print(colored("----Request to path:" + path, "yellow"))
 
     # NOTE: RPC works only with underscore(_) request, but new feature added that gateway can process both _ and - request, so we allow both
+    # TODO!!! Change request paths to custom services we use!!!
     map_service_type_paths = {
         "init-student" : "type1",
         "init_student" : "type1",
@@ -153,25 +157,35 @@ def service_register():
     # print(colored("service name:", "red"), service_name)
     # print(colored("service address:", "red"), service_address)
     # print(colored("service type:", "red"), service_type)
-  
+    
+    #################################
+    # TODO: test and add in cache - last time up, pentru alte requesturi de ex. get, verifici daca rezultatele sunt diferite
+    # la ambele cache-uri, atunci vezi care din ele a fost mai recent up si inseamna ca il sincronizezi cu celelalt
+    # TODO: de modificat dupa acest model sa lucreze peste tot unde este cache!! (active-active replication)
     try:
         # cache = CacheDriver('redis')
+        cache_status = SUCCESS
+
         try:
             redis_cache = CacheDriver('redis')
+            redis_cache.do('lpush', ["services-" + str(service_type), service_address])
         except:
-            test_logger.error("ERROR: Redis cache initialization failed")
+            test_logger.error("ERROR: Redis cache failed on command lpush at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
+            cache_status = REDIS_CACHE_FAILED
+
         try:
             cache = CacheDriver('custom')
-        except:
-            test_logger.error("ERROR: Custom cache initialization failed")
-        
-        try:
             cache.do('lpush', ["services-" + str(service_type), service_address])
         except:
-            test_logger.error("ERROR: Custom cache lpush command failed")
+            test_logger.error("ERROR: Custom cache failed on command lpush at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
+            if cache_status=="success":
+                cache_status = CUSTOM_CACHE_FAILED
+            else:
+                cache_status = ALL_CACHES_FAILED
+                test_logger.error("ERROR: Custom cache and Redis cache both failed! at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
+                return abort(500, {"error:", "ERROR! Cache failure. Somethig went wrong"})
 
-            redis_cache.do('lpush', ["services-" + str(service_type), service_address])
-
+        
 
         test_logger.info("Service " + str(service_name) 
                                     + "of type " + str(service_type) 
