@@ -128,6 +128,10 @@ def router(path):
     # print(colored("parameters:", "magenta"), parameters)
 
     circuit_breaker = load_balancer.next(service_type)
+
+    if circuit_breaker is None:
+        return abort(500, {"error": "Server error in load_balancer.next(...) method. No services found in cache."})
+
     service_response = circuit_breaker.request(parameters, request.method)
 
  
@@ -210,12 +214,18 @@ def get_registered_services():
     try:
         l_type1 = cache.do("custom", 'lrange', ['services-type1', 0, -1])
         l_type2 = cache.do("custom", 'lrange', ['services-type2', 0, -1])
+
+        if (type(l_type1) == int) or (type(l_type2) == int):
+            test_logger.error("Type of l_type1 or l_type2  of custom cache should be int")
+            raise CustomError("Type of l_type1 or l_type2  of custom cache should be int")
     except Exception as e:
         try:
             test_logger.error("ERROR: Custom cache lrange command failed. " + str(e))
 
             l_type1 = cache.do("redis", 'lrange', ['services-type1', 0, -1])
             l_type2 = cache.do("redis", 'lrange', ['services-type2', 0, -1])
+
+            
         except Exception as e:
             test_logger.error("ERROR: Alert! Both caches failed on command lrange!!!." + str(e))
             # return abort(500, "Error: Both caches failed!")

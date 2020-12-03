@@ -62,8 +62,8 @@ class CacheDriver(object):
                     message_command = 'GET'
                     new_args = args[:-2]
 
-                if message_command=='DELETE':
-                    message_command = 'DEL'
+                elif message_command=="DELETE":
+                    message_command = "DEL"
 
                 for arg in new_args:
                     message_command += " " + str(arg)
@@ -94,6 +94,7 @@ class CacheDriver(object):
                     amount_received += len(data)
                     print(sys.stderr, 'received "%s"' % data)
                     print("---", data.decode('utf-8'))
+                
 
                 # TODO: test
                 data = data.decode('utf-8')

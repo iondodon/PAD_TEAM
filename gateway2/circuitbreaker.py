@@ -112,7 +112,7 @@ class CircuitBreaker:
                 return r.json()
                        
         except Exception as e:
-
+            nr_requests_failed = 0
             # nr_requests_failed = cache.incr(self.get_redis_key())
             # nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
             # nr_requests_failed = int(cache.do('incr', [self.get_redis_key().encode('utf-8'))])
@@ -122,16 +122,16 @@ class CircuitBreaker:
             cache = CacheDriver()
             try:
                 nr_requests_failed = int(cache.do("custom", 'incr', [self.get_redis_key()]))
-            except Exception as e:
+            except Exception as e1:
                 test_logger.error("ERROR: Custom cache incr command failed")
-                test_logger.error(str(e))
+                test_logger.error(str(e1))
                 cache_status = CUSTOM_CACHE_FAILED
 
             try:
                 nr_requests_failed = int(cache.do("redis", 'incr', [self.get_redis_key()]))
-            except Exception as e:
+            except Exception as e2:
                 test_logger.error("ERROR: Redis cache incr command failed")
-                test_logger.error(str(e))
+                test_logger.error(str(e2))
                 cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
 
@@ -178,7 +178,7 @@ class CircuitBreaker:
 
         cache = CacheDriver()
         try:
-            
+            cache.do("custom", 'lrem', ["services-"+str(self.service_type), self.address])
             cache.do("custom", 'delete', [self.get_redis_key()])
         except Exception as e:
             test_logger.error("ERROR: Custom cache delete command failed on key " + str(self.get_redis_key()))
