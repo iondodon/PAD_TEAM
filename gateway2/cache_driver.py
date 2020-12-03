@@ -12,11 +12,11 @@ class CacheDriver(object):
 
     class __OneCacheDriver:
         def __init__(self, cache_type='redis'):
+            self.cache_type = cache_type
+
             if cache_type=='custom':
-                self.cache_type = cache_type
                 self.init_custom_cache()
             else:
-                self.cache_type = 'redis'
                 self.init_redis_cache()
 
         def init_custom_cache(self):
@@ -156,20 +156,21 @@ class CacheDriver(object):
             return repr(self) + " : " + self.cache_type
 
     instance = {}
-    cache_type = 'redis'
+    # cache_type = 'redis'
 
-    def __init__(self, cache_type):
-        # if not CacheDriver.instance:
-        if not cache_type in CacheDriver.instance:
-            CacheDriver.instance[cache_type] = CacheDriver.__OneCacheDriver(cache_type)
-            self.cache_type = cache_type
+    # def __init__(self, cache_type):
+    def __init__(self):
+        for cache_type in ["redis", "custom"]:
+            if not cache_type in CacheDriver.instance:
+                CacheDriver.instance[cache_type] = CacheDriver.__OneCacheDriver(cache_type)
+            # self.cache_type = cache_type
         # else:
             # CacheDriver.instance[cache_type].cache_type = cache_type
 
-    def do(self, command, args):
-        return CacheDriver.instance[self.cache_type].do(command, args)
+    def do(self, cache_type, command, args):
+        return CacheDriver.instance[cache_type].do(command, args)
 
-    # def get_type(self,):
+    # def get_type(self):
     #     return CacheDriver.instance[cache_type].get_type()
     
 

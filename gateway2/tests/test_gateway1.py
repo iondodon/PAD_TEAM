@@ -95,13 +95,15 @@ def test_gateway_rpc():
 
 # do not forget to change parameter to 'HTTP' in circuitbreaker!
 def test_gateway_http():
-    # register_service("Service1", "http://127.0.0.1:6005/", "type1")
+    # register_service("Service1", "http://127.0.0.1:6002/", "type1")
+    # register_service("Service2", "http://127.0.0.1:6001/", "type2")
     # register_service("Service1", "http://127.0.0.1:6004/", "type1")
 
     # register_service(service_name="Service2", address="http://127.0.0.1:6004/", service_type="type1")
     
     # register_service(service_name="Service1", address="http://127.0.0.1:6005/", service_type="type1")
-    get_registered_services()
+    
+    # get_registered_services()
     request_init_student_dash("Diana 2", "FAF-171")
 
 if __name__ == '__main__':

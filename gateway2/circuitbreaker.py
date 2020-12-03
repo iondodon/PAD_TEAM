@@ -26,6 +26,13 @@ async_handler = AsynchronousLogstashHandler(host_logger, port_logger, database_p
 test_logger.addHandler(async_handler)
 
 
+###### Define possible cache statuses#####
+SUCCESS = 1
+CUSTOM_CACHE_FAILED = 2
+REDIS_CACHE_FAILED = 3
+BOTH_CACHES_FAILED = 4
+##########################################
+
 class CircuitBreaker:
     FAILURE_THRESHOLD = 3
     # TYPE_REQUESTS = 'RPC'  # this can be 'RPC' or 'HTTP'
@@ -39,16 +46,6 @@ class CircuitBreaker:
 
 
     def request(self, params, method):
-
-        try:
-            redis_cache = CacheDriver('redis')
-        except:
-            test_logger.error("ERROR: Redis cache initialization failed")
-        try:
-            cache = CacheDriver('custom')
-        except:
-            test_logger.error("ERROR: Custom cache initialization failed")
-        
 
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
@@ -120,11 +117,24 @@ class CircuitBreaker:
             # nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
             # nr_requests_failed = int(cache.do('incr', [self.get_redis_key().encode('utf-8'))])
 
+            cache_status = SUCCESS
+
+            cache = CacheDriver()
             try:
-                nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
-            except:
+                nr_requests_failed = int(cache.do("custom", 'incr', [self.get_redis_key()]))
+            except Exception as e:
                 test_logger.error("ERROR: Custom cache incr command failed")
-                nr_requests_failed = int(redis_cache.do('incr', [self.get_redis_key()]))
+                test_logger.error(str(e))
+                cache_status = CUSTOM_CACHE_FAILED
+
+            try:
+                nr_requests_failed = int(cache.do("redis", 'incr', [self.get_redis_key()]))
+            except Exception as e:
+                test_logger.error("ERROR: Redis cache incr command failed")
+                test_logger.error(str(e))
+                cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+
+
 
             test_logger.error("ERROR: Request failed. " + str(e))
             print(colored("----Request failed:----", "red"), nr_requests_failed)
@@ -161,28 +171,33 @@ class CircuitBreaker:
 
 
     def remove_from_cache(self):
-        try:
-            redis_cache = CacheDriver('redis')
-        except:
-            test_logger.error("ERROR: Redis cache initialization failed")
-        try:
-            cache = CacheDriver('custom')
-        except:
-            test_logger.error("ERROR: Custom cache initialization failed")
-        
+        cache_status = SUCCESS
 
         print(colored("Remove service from cache:", "yellow"), self.address)
         test_logger.info("Remove service from cache: " + str(self.address))
 
-
-        
+        cache = CacheDriver()
         try:
-            cache.do('delete', [self.get_redis_key()])
-        except:
-            test_logger.error("ERROR: Custom cache delete command failed")
+            
+            cache.do("custom", 'delete', [self.get_redis_key()])
+        except Exception as e:
+            test_logger.error("ERROR: Custom cache delete command failed on key " + str(self.get_redis_key()))
+            test_logger.error(str(e))
+            cache_status = CUSTOM_CACHE_FAILED
 
-            redis_cache.do('lrem', ["services-"+str(self.service_type), 1, self.address])
-            redis_cache.do('delete', [self.get_redis_key()])
+        try:
+            cache.do("redis", 'lrem', ["services-"+str(self.service_type), 1, self.address])
+            cache.do("redis", 'delete', [self.get_redis_key()])
+        except Exception as e:
+            test_logger.error("ERROR: Redis cache delete command failed on key " + str(self.get_redis_key()))
+            test_logger.error(e)
+            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+
+
+
+        if cache_status == BOTH_CACHES_FAILED:
+            test_logger.error("ERROR: Alert! Both caches failed on delete command on key " + str(self.get_redis_key()))
+
 
         # cache.lrem("services-"+str(self.service_type), 1, self.address)
         # cache.delete(self.get_redis_key())
