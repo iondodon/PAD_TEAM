@@ -44,7 +44,7 @@ load_balancer = LoadBalancer()
 ###### Define possible cache statuses#####
 SUCCESS = 1
 CUSTOM_CACHE_FAILED = 2
-REDIS_CACHE_FAILED = 3
+cache_FAILED = 3
 BOTH_CACHES_FAILED = 4
 ##########################################
 
@@ -128,6 +128,10 @@ def router(path):
     # print(colored("parameters:", "magenta"), parameters)
 
     circuit_breaker = load_balancer.next(service_type)
+
+    if circuit_breaker is None:
+        return abort(500, {"error": "Server error in load_balancer.next(...) method. No services found in cache."})
+
     service_response = circuit_breaker.request(parameters, request.method)
 
  
@@ -166,34 +170,35 @@ def service_register():
         # cache = CacheDriver('redis')
         cache_status = SUCCESS
 
+        cache = CacheDriver()
         try:
-            redis_cache = CacheDriver('redis')
-            redis_cache.do('lpush', ["services-" + str(service_type), service_address])
-        except:
+            cache.do("redis", 'lpush', ["services-" + str(service_type), service_address])
+        except Exception as e:
             test_logger.error("ERROR: Redis cache failed on command lpush at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
-            cache_status = REDIS_CACHE_FAILED
+            test_logger.error(str(e))
+            cache_status = cache_FAILED
 
         try:
-            cache = CacheDriver('custom')
-            cache.do('lpush', ["services-" + str(service_type), service_address])
-        except:
+            cache.do("custom", 'lpush', ["services-" + str(service_type), service_address])
+
+        except Exception as e:
             test_logger.error("ERROR: Custom cache failed on command lpush at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
-            if cache_status=="success":
-                cache_status = CUSTOM_CACHE_FAILED
-            else:
-                cache_status = ALL_CACHES_FAILED
-                test_logger.error("ERROR: Custom cache and Redis cache both failed! at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
-                return abort(500, {"error:", "ERROR! Cache failure. Somethig went wrong"})
+            test_logger.error(str(e))
+            cache_status = cache_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
         
+        if cache_status==BOTH_CACHES_FAILED:
+            test_logger.error("ERROR: Custom cache and Redis cache both failed! at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
+            return abort(500, {"error:", "ERROR! Cache failure. Somethig went wrong"})
+
 
         test_logger.info("Service " + str(service_name) 
                                     + "of type " + str(service_type) 
                                     + " with address " + str(service_address) 
                                     + " registered!")
         return {"status": "success", "message": "Service registered"}
-    except:
-        test_logger.error("ERROR: Service " + str(service_name) + "  not registered. Somethig went wrong")
+    except Exception as e:
+        test_logger.error("ERROR: Service " + str(service_name) + "  not registered. Somethig went wrong. Error:" + str(e))
         return abort(500, {"error:", "ERROR! Service not registered. Somethig went wrong"})
 
 
@@ -202,25 +207,30 @@ def service_register():
 def get_registered_services():
     result = {}
 
-    try:
-        redis_cache = CacheDriver('redis')
-    except:
-        test_logger.error("ERROR: Redis cache initialization failed")
-    try:
-        cache = CacheDriver('custom')
-    except:
-        test_logger.error("ERROR: Custom cache initialization failed")
-
+    
     # l_type1 = cache.lrange('services-type1', 0, -1)
     # l_type2 = cache.lrange('services-type2', 0, -1)
+    cache = CacheDriver()
     try:
-        l_type1 = cache.do('lrange', ['services-type1', 0, -1])
-        l_type2 = cache.do('lrange', ['services-type2', 0, -1])
-    except:
-        test_logger.error("ERROR: Custom cache lrange command failed")
+        l_type1 = cache.do("custom", 'lrange', ['services-type1', 0, -1])
+        l_type2 = cache.do("custom", 'lrange', ['services-type2', 0, -1])
 
-        l_type1 = redis_cache.do('lrange', ['services-type1', 0, -1])
-        l_type2 = redis_cache.do('lrange', ['services-type2', 0, -1])
+        if (type(l_type1) == int) or (type(l_type2) == int):
+            test_logger.error("Type of l_type1 or l_type2  of custom cache should be int")
+            raise CustomError("Type of l_type1 or l_type2  of custom cache should be int")
+    except Exception as e:
+        try:
+            test_logger.error("ERROR: Custom cache lrange command failed. " + str(e))
+
+            l_type1 = cache.do("redis", 'lrange', ['services-type1', 0, -1])
+            l_type2 = cache.do("redis", 'lrange', ['services-type2', 0, -1])
+
+            
+        except Exception as e:
+            test_logger.error("ERROR: Alert! Both caches failed on command lrange!!!." + str(e))
+            # return abort(500, "Error: Both caches failed!")
+            return {"registered_services-type1": [], "registered_services-type2": [], "status": "Both caches failed so no available service for now"}
+
 
     print(colored('--l_type1:', 'blue'), l_type1)
     print(colored('type l_type1:', 'blue'), type(l_type1))

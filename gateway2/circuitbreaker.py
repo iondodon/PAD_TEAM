@@ -26,6 +26,13 @@ async_handler = AsynchronousLogstashHandler(host_logger, port_logger, database_p
 test_logger.addHandler(async_handler)
 
 
+###### Define possible cache statuses#####
+SUCCESS = 1
+CUSTOM_CACHE_FAILED = 2
+REDIS_CACHE_FAILED = 3
+BOTH_CACHES_FAILED = 4
+##########################################
+
 class CircuitBreaker:
     FAILURE_THRESHOLD = 3
     # TYPE_REQUESTS = 'RPC'  # this can be 'RPC' or 'HTTP'
@@ -40,16 +47,6 @@ class CircuitBreaker:
 
     def request(self, params, method):
 
-        try:
-            redis_cache = CacheDriver('redis')
-        except:
-            test_logger.error("ERROR: Redis cache initialization failed")
-        try:
-            cache = CacheDriver('custom')
-        except:
-            test_logger.error("ERROR: Custom cache initialization failed")
-        
-
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
                 + "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in class CircuitBreaker")
@@ -59,10 +56,10 @@ class CircuitBreaker:
 
         if self.tripped:
             self.remove_from_cache()
-            raise CustomError("Circuit breaker tripped")
+            # raise CustomError("Circuit breaker tripped")
             # 503 - service unavailable
             test_logger.error("ERROR: CircuitBreaker tripped. No services available")
-            return abort(503, {"error": "No services available"})
+            return abort(503, {"error": "No services available. Circuit breaker tripped"})
             # return {"status": "error", "message":"Circuit breaker tripped"}
 
         # pentru redis trebuie decode:
@@ -115,16 +112,26 @@ class CircuitBreaker:
                 return r.json()
                        
         except Exception as e:
+            nr_requests_failed = 0
+         
+            cache_status = SUCCESS
 
-            # nr_requests_failed = cache.incr(self.get_redis_key())
-            # nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
-            # nr_requests_failed = int(cache.do('incr', [self.get_redis_key().encode('utf-8'))])
+            cache = CacheDriver()
+            try:
+                nr_requests_failed = int(cache.do("custom", 'incr', [self.get_redis_key()]))
+            except Exception as e1:
+                test_logger.error("ERROR: Custom cache incr command failed")
+                test_logger.error(str(e1))
+                cache_status = CUSTOM_CACHE_FAILED
 
             try:
-                nr_requests_failed = int(cache.do('incr', [self.get_redis_key()]))
-            except:
-                test_logger.error("ERROR: Custom cache incr command failed")
-                nr_requests_failed = int(redis_cache.do('incr', [self.get_redis_key()]))
+                nr_requests_failed = int(cache.do("redis", 'incr', [self.get_redis_key()]))
+            except Exception as e2:
+                test_logger.error("ERROR: Redis cache incr command failed")
+                test_logger.error(str(e2))
+                cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+
+
 
             test_logger.error("ERROR: Request failed. " + str(e))
             print(colored("----Request failed:----", "red"), nr_requests_failed)
@@ -136,6 +143,8 @@ class CircuitBreaker:
         if nr_requests_failed >= self.FAILURE_THRESHOLD:
             self.remove_from_cache()
             self.tripped = True
+        
+        return self.request(params, method)
 
 
         # return {"status":"error", "message": "Request to service failed", "error":last_error}
@@ -148,11 +157,7 @@ class CircuitBreaker:
 
 
     def get_redis_key(self):
-        # pentru redis trebuie decode!!!
-        # return "circuit_breaker:" + self.address.decode('utf-8')
-        # return str("circuit_breaker:" + self.address)
-        # return "CB-" + self.address.decode('utf-8')
-        
+        # pentru redis trebuie decode!!! 
         try:
             self.address = self.address.decode()
             return "CB-" + self.address
@@ -161,28 +166,33 @@ class CircuitBreaker:
 
 
     def remove_from_cache(self):
-        try:
-            redis_cache = CacheDriver('redis')
-        except:
-            test_logger.error("ERROR: Redis cache initialization failed")
-        try:
-            cache = CacheDriver('custom')
-        except:
-            test_logger.error("ERROR: Custom cache initialization failed")
-        
+        cache_status = SUCCESS
 
         print(colored("Remove service from cache:", "yellow"), self.address)
         test_logger.info("Remove service from cache: " + str(self.address))
 
-
-        
+        cache = CacheDriver()
         try:
-            cache.do('delete', [self.get_redis_key()])
-        except:
-            test_logger.error("ERROR: Custom cache delete command failed")
+            cache.do("custom", 'lrem', ["services-"+str(self.service_type), self.address])
+            # cache.do("custom", 'delete', [self.get_redis_key()])
+        except Exception as e:
+            test_logger.error("ERROR: Custom cache delete command failed on key " + str(self.get_redis_key()))
+            test_logger.error(str(e))
+            cache_status = CUSTOM_CACHE_FAILED
 
-            redis_cache.do('lrem', ["services-"+str(self.service_type), 1, self.address])
-            redis_cache.do('delete', [self.get_redis_key()])
+        try:
+            cache.do("redis", 'lrem', ["services-"+str(self.service_type), 1, self.address])
+            # cache.do("redis", 'delete', [self.get_redis_key()])
+        except Exception as e:
+            test_logger.error("ERROR: Redis cache delete command failed on key " + str(self.get_redis_key()))
+            test_logger.error(e)
+            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+
+
+
+        if cache_status == BOTH_CACHES_FAILED:
+            test_logger.error("ERROR: Alert! Both caches failed on delete command on key " + str(self.get_redis_key()))
+
 
         # cache.lrem("services-"+str(self.service_type), 1, self.address)
         # cache.delete(self.get_redis_key())

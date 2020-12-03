@@ -3,6 +3,7 @@ from cache_driver import CacheDriver
 
 import logging
 from logstash_async.handler import AsynchronousLogstashHandler
+from time import sleep
 
 
 # Setup elk stack
@@ -21,51 +22,91 @@ async_handler = AsynchronousLogstashHandler(host_logger, port_logger, database_p
 test_logger.addHandler(async_handler)
 
 
+###### Define possible cache statuses#####
+SUCCESS = 1
+CUSTOM_CACHE_FAILED = 2
+REDIS_CACHE_FAILED = 3
+BOTH_CACHES_FAILED = 4
+##########################################
+
+
 class LoadBalancer:
 
     def any_available(self, service_type):
         """ returns True if any service of respective type is available or False if not"""
+        cache_status = SUCCESS
 
+        len_services1 = 0
+        len_services2 = 0
+
+        cache = CacheDriver()
         try:
-            redis_cache = CacheDriver('redis')
-        except:
-            test_logger.error("ERROR: Redis cache initialization failed")
-        try:
-            cache = CacheDriver('custom')
-        except:
-            test_logger.error("ERROR: Custom cache initialization failed")
+            len_services1 = cache.do("custom", 'llen', ["services-" + str(service_type)])
+        except Exception as e:
+            test_logger.error("ERROR: Custom cache llen command failed on key" + "services-" + str(service_type)  )
+            test_logger.error(str(e))
+            cache_status = CUSTOM_CACHE_FAILED
         
+        try:        
+            len_services2 = cache.do("redis", 'llen', ["services-" + str(service_type)])
+        except Exception as e:
+            test_logger.error("ERROR: Redis cache llen command failed on key" +"services-" + str(service_type)  )
+            test_logger.error(str(e))
+            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
-        try:
-            len_services = cache.do('llen', ["services-" + str(service_type)])
-        except:
-            test_logger.error("ERROR: Custom cache llen command failed")
+        
+        if cache_status == BOTH_CACHES_FAILED:
+            test_logger.error("ERROR: Alert! Both caches failed (redis and custom) on command llen (" + "services-" + str(service_type) + ")")
 
-            len_services = redis_cache.do('llen', ["services-" + str(service_type)])
 
-        return len_services
+        if len_services1 is None or type(len_services1) is not int:
+            len_services1 = 0
+        
+        if len_services2 is None or type(len_services2) is not int:
+            len_services2 = 0
+
+        # return len_services
+        return max(int(len_services1), int(len_services2))>0 #will return true or false
 
         
 
     def next(self, service_type):
         # circuitbreaker = CircuitBreaker(redis_cache.rpoplpush("services-"+str(service_type), "services-"+str(service_type)), service_type)
         # service = redis_cache.rpoplpush("services-"+str(service_type), "services-"+str(service_type))
-        
-        try:
-            redis_cache = CacheDriver('redis')
-        except:
-            test_logger.error("ERROR: Redis cache initialization failed")
-        try:
-            cache = CacheDriver('custom')
-        except:
-            test_logger.error("ERROR: Custom cache initialization failed")
-        
-        try:
-            service = cache.do('rpoplpush', ["services-"+str(service_type), "services-"+str(service_type)])
-            test_logger.error("ERROR: Custom cache rpoplpush command failed")
-        except:
-            service = redis_cache.do('rpoplpush', ["services-"+str(service_type), "services-"+str(service_type)]).decode('utf-8')
+        cache_status = SUCCESS
 
-        circuitbreaker = CircuitBreaker(service, service_type)
+
+        sleep(0.3)  #give some time for processing previous request
+        cache = CacheDriver()
+
+        service1 = None
+        service2 = None
+
+        try:
+            service1 = cache.do("custom", 'rpoplpush', ["services-"+str(service_type), "services-"+str(service_type)])
+        except Exception as e:
+            test_logger.error("ERROR: Custom cache rpoplpush command failed on" + str(["services-"+str(service_type), "services-"+str(service_type)]))
+            test_logger.error(str(e))
+            cache_status = CUSTOM_CACHE_FAILED
+
+        try:
+            service2 = cache.do("redis", 'rpoplpush', ["services-"+str(service_type), "services-"+str(service_type)])
+            if service2 is not None:
+                service2 = service2.decode('utf-8')
+
+        except Exception as e:
+            test_logger.error("ERROR: Redis cache rpoplpush command failed on" + str(["services-"+str(service_type), "services-"+str(service_type)]))
+            test_logger.error(str(e))
+            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+            
+        
+
+        if cache_status == BOTH_CACHES_FAILED:
+            test_logger.error("ERROR: Alert! Both caches rpoplpush command failed on " + str(["services-"+str(service_type), "services-"+str(service_type)]))
+
+        if service1 is not None:
+            circuitbreaker = CircuitBreaker(service1, service_type)
+        elif service2 is not None:
+            circuitbreaker = CircuitBreaker(service2, service_type)
 
         return circuitbreaker

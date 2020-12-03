@@ -39,6 +39,10 @@ def register_service(service_name, address, service_type):
 
     except Exception as e:
         print(colored("---error in request", "red"), e)
+        
+        if r is not None:
+            print(colored("status code:"+str(r.status_code), "red"))
+            print(colored(str(r.text), "red"))
         # print(colored("status code:"+str(r.status_code), "red"))
         # print(colored(str(r), "red"))
         # print(colored(str(r.text), "red"))
@@ -64,8 +68,9 @@ def request_init_student_dash(student_name, group):
     except Exception as e:
         print(colored("---error in request", "red"), e)
         print(colored("status code:"+str(r.status_code), "red"))
-        print(colored(str(r), "red"))
-        print(colored(str(r.text), "red"))
+        if r is not None:
+            print(colored("status code:"+str(r.status_code), "red"))
+            print(colored(str(r.text), "red"))
 
 
 
@@ -81,8 +86,9 @@ def get_registered_services():
         pp.pprint(r.json())
     except Exception as e:
         print(colored("---error in request", "red"), e)
-        print(colored("status code:"+str(r.status_code), "red"))
-        print(colored(str(r.text), "red"))
+        if r is not None:
+            print(colored("status code:"+str(r.status_code), "red"))
+            print(colored(str(r.text), "red"))
         
 
 
@@ -95,12 +101,14 @@ def test_gateway_rpc():
 
 # do not forget to change parameter to 'HTTP' in circuitbreaker!
 def test_gateway_http():
-    # register_service("Service1", "http://127.0.0.1:6005/", "type1")
+    # register_service("Service1", "http://127.0.0.1:6002/", "type1")
+    # register_service("Service2", "http://127.0.0.1:6001/", "type2")
     # register_service("Service1", "http://127.0.0.1:6004/", "type1")
 
     # register_service(service_name="Service2", address="http://127.0.0.1:6004/", service_type="type1")
     
     # register_service(service_name="Service1", address="http://127.0.0.1:6005/", service_type="type1")
+
     get_registered_services()
     request_init_student_dash("Diana 2", "FAF-171")
 
