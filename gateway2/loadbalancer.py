@@ -81,7 +81,7 @@ class LoadBalancer:
 
         service1 = None
         service2 = None
-        
+
         try:
             service1 = cache.do("custom", 'rpoplpush', ["services-"+str(service_type), "services-"+str(service_type)])
         except Exception as e:
@@ -92,7 +92,7 @@ class LoadBalancer:
         try:
             service2 = cache.do("redis", 'rpoplpush', ["services-"+str(service_type), "services-"+str(service_type)])
             if service2 is not None:
-                service2 = service.decode('utf-8')
+                service2 = service2.decode('utf-8')
 
         except Exception as e:
             test_logger.error("ERROR: Redis cache rpoplpush command failed on" + str(["services-"+str(service_type), "services-"+str(service_type)]))
