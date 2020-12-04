@@ -127,11 +127,32 @@ defmodule Cache.Storage do
         end
     end
 
-    defp update_storage(new_storage) do
+    def rpop(key) do
+        storage = get_storage()
+        list = Map.get(storage, key)
+
+        if !is_list(list) do
+            :not_a_list
+        else
+            if length(list) == 0 do
+                :empy_list
+            else
+                list = Map.get(storage, key)
+                {last, list_rest} = List.pop_at(list, -1)
+                storage = Map.put(storage, key, list_rest)
+
+                update_storage(storage)
+
+                last
+            end
+        end
+    end
+
+    def update_storage(new_storage) do
         Agent.update(__MODULE__, fn _storage -> new_storage end)
     end
 
-    defp get_storage() do
+    def get_storage() do
         Agent.get(__MODULE__, fn storage -> storage end)
     end
 end

@@ -3,8 +3,9 @@ defmodule Cache.CommandListener do
     @data_length 0
 
     def serve(client_socket) do
-        {:ok, command} = read_from_client(client_socket)
-        result = Cache.Command.run(command)
+        {:ok, io_command} = read_from_client(client_socket)
+        {:ok, command} = Cache.Command.parse(io_command)
+        result = Cache.Command.run(io_command, command)
         send_to_client(client_socket, result)
 
         serve(client_socket)
