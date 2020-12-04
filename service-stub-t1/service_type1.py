@@ -18,8 +18,11 @@ def register_myself(sanic, loop):
         # r = requests.get('http://127.0.0.1:5000/')
         # r = requests.get('http://localhost:5003/registered-services')
         
+        my_address = 'http://192.168.0.20' + ':8000'
+        # my_address = 'http://0.0.0.0:8000'
+
         params = {
-            "address": 'http://0.0.0.0:8000', 
+            "address": my_address + "/",
             "type":"type1", 
             "service_name": "service-stub-t1"
         }

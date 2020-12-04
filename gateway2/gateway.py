@@ -83,7 +83,8 @@ def router(path):
 
         "s2-status": "type2",
         "s1-status": "type1",
-        "status" : ""
+        "status" : "",
+        "test-route": "type1"
     }
 
     allowed_paths = map_service_type_paths.keys()
