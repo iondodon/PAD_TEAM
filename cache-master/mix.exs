@@ -14,7 +14,7 @@ defmodule Cache.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :crypto],
       mod: {CacheMaster, []},
       env: [
         port_for_client: 6666,
@@ -26,7 +26,7 @@ defmodule Cache.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-
+		{:poison, "~> 4.0"}
     ]
   end
 end

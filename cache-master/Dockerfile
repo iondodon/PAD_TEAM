@@ -6,6 +6,6 @@ WORKDIR /cache-master
 #RUN apt update && apt install erlang-wx
 RUN mix local.hex --force
 
-CMD iex -S mix
+#CMD iex -S mix
 
 EXPOSE 6666 6667

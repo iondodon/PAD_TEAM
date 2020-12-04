@@ -84,47 +84,58 @@ services:
       - REDIS_URL=redis://cache
     networks:
       - elk
+  
 
   cache-master:
     build: ./cache-master
     container_name: pbl-cache-master
     tty: true
     volumes: 
-        - ./cache-master:/cache-master
+      - ./cache-master:/cache-master
     restart: always
     ports:
-        - 6666:6666
+      - 6666:6666
     networks:
       - elk
-  
-        
+
   cache-slave1-replica1:
     build: ./cache-slave
     container_name: pbl-cache-slave1-replica1
     tty: true
     volumes: 
-        - ./cache-slave:/cache-slave
+      - ./cache-slave:/cache-slave
     restart: always
     depends_on: [cache-master]
     environment:
-        - SLAVE_NAME=slave1
+      - SLAVE_NAME=slave1
     networks:
       - elk
-  
+
+  cache-slave1-replica2:
+    build: ./cache-slave
+    container_name: pbl-cache-slave1-replica2
+    tty: true
+    volumes: 
+      - ./cache-slave:/cache-slave
+    restart: always
+    depends_on: [cache-master]
+    environment:
+      - SLAVE_NAME=slave1
+    networks:
+      - elk
 
   cache-slave2-replica1:
     build: ./cache-slave
     container_name: pbl-cache-slave2-replica1
     tty: true
     volumes: 
-        - ./cache-slave:/cache-slave
+      - ./cache-slave:/cache-slave
     restart: always
     depends_on: [cache-master]
     environment:
-        - SLAVE_NAME=slave2
+      - SLAVE_NAME=slave2
     networks:
       - elk
-  
 
 
   flask-gateway:

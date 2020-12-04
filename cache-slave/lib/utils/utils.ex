@@ -3,26 +3,29 @@ defmodule Utils do
         value = internal_type(value)
 
         cond do
-            is_float(value)    -> 
+            is_float(value)    ->
                 "(float) #{value}"
-            is_integer(value)  -> 
+            is_integer(value)  ->
                 "(integer) #{value}"
-            is_boolean(value)  -> 
+            is_boolean(value)  ->
                 "(boolean) #{value}"
-            is_atom(value)     -> 
+            is_atom(value)     ->
                 "(atom) #{value}"
-            is_binary(value)   -> 
+            is_binary(value)   ->
                 "(binary) #{value}"
-            is_function(value) -> 
+            is_function(value) ->
                 "(function) #{value}"
-            is_list(value)     -> 
+            is_list(value)     ->
                 value_str = Enum.reduce(value, "", fn item, str -> str <> " " <> item end)
                 "(list) #{value_str}"
-            is_tuple(value)    -> 
+            is_tuple(value)    ->
                 "(tuple) #{value}"
-            true              -> 
+            is_map(value)      ->
+                {:ok, value} = Poison.encode(value)
+                "(map) #{value}"
+            true              ->
                 "(idunno) #{value}"
-        end    
+        end
     end
 
     def internal_type(value) do
