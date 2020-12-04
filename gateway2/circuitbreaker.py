@@ -59,8 +59,8 @@ class CircuitBreaker:
             # raise CustomError("Circuit breaker tripped")
             # 503 - service unavailable
             test_logger.error("ERROR: CircuitBreaker tripped. No services available")
-            return abort(503, {"error": "No services available. Circuit breaker tripped"})
-            # return {"status": "error", "message":"Circuit breaker tripped"}
+            # return abort(503, {"error": "No services available. Circuit breaker tripped"})
+            return {"status": "error", "message":"Circuit breaker tripped"}
 
         # pentru redis trebuie decode:
         # endpoint = str(self.address.decode("utf-8") ) + str(params["path"]).replace("/", "")
@@ -81,7 +81,9 @@ class CircuitBreaker:
 
                 print(colored("Response from service:----", "green"), r)
                 print(colored("Response from service decoded:----", "green"), json.loads(r))
-                return  json.loads(r)
+                # return  json.loads(r)
+                return {"status": "success", "response": json.loads(r)}
+
 
             elif self.TYPE_REQUESTS == 'HTTP':
                 test_logger.info("Request type: HTTP")
@@ -109,7 +111,8 @@ class CircuitBreaker:
                 test_logger.debug("Response from service:" + str(r.json()))
                 print(colored("Response from service:----", "green"), r.json())
 
-                return r.json()
+                # return r.json()
+                return {"status": "success", "response": r.json()}
                        
         except Exception as e:
             nr_requests_failed = 0
@@ -140,16 +143,16 @@ class CircuitBreaker:
             last_error = str(e)
 
 
-        if nr_requests_failed >= self.FAILURE_THRESHOLD:
-            self.remove_from_cache()
-            self.tripped = True
-        
-        return self.request(params, method)
+            if nr_requests_failed >= self.FAILURE_THRESHOLD:
+                self.remove_from_cache()
+                self.tripped = True
 
 
         # return {"status":"error", "message": "Request to service failed", "error":last_error}
         test_logger.error("ERROR: Request to service of type " + str(self.service_type) + " failed")
-        return abort(500, {"message":"Request to service failed", "error ":last_error})
+        # return abort(500, {"message":"Request to service failed", "error ":last_error})
+
+        return {"status": "error", "message":"Request to service failed. Error :" + last_error}
 
  
     def clear(self, address):
