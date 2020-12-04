@@ -5,5 +5,6 @@ WORKDIR /cache-slave
 
 #RUN apt update && apt install erlang-wx
 RUN mix local.hex --force
+RUN mix deps.get
 
 CMD iex -S mix
