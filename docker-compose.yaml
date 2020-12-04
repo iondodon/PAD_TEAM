@@ -3,12 +3,12 @@ version: '3.8'
 services:
   elasticsearch:
     build:
-      context: gateway2/docker-elk/elasticsearch/
+      context: gateway2/docker-elk-new/elasticsearch/
       args:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./gateway2/docker-elk/elasticsearch/config/elasticsearch.yml
+        source: ./gateway2/docker-elk-new/elasticsearch/config/elasticsearch.yml
         target: /usr/share/elasticsearch/config/elasticsearch.yml
         read_only: true
       - type: volume
@@ -28,16 +28,16 @@ services:
 
   logstash:
     build:
-      context: gateway2/docker-elk/logstash/
+      context: gateway2/docker-elk-new/logstash/
       args:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./gateway2/docker-elk/logstash/config/logstash.yml
+        source: ./gateway2/docker-elk-new/logstash/config/logstash.yml
         target: /usr/share/logstash/config/logstash.yml
         read_only: true
       - type: bind
-        source: ./gateway2/docker-elk/logstash/pipeline
+        source: ./gateway2/docker-elk-new/logstash/pipeline
         target: /usr/share/logstash/pipeline
         read_only: true
     ports:
@@ -57,12 +57,12 @@ services:
 
   kibana:
     build:
-      context: gateway2/docker-elk/kibana/
+      context: gateway2/docker-elk-new/kibana/
       args:
         ELK_VERSION: $ELK_VERSION
     volumes:
       - type: bind
-        source: ./gateway2/docker-elk/kibana/config/kibana.yml
+        source: ./gateway2/docker-elk-new/kibana/config/kibana.yml
         target: /usr/share/kibana/config/kibana.yml
         read_only: true
     ports:
