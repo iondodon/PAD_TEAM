@@ -1,4 +1,5 @@
 defmodule Cache.Connection do
+	alias Cache.Storage
 	require Logger
 	require IEx
 
@@ -6,6 +7,7 @@ defmodule Cache.Connection do
 	@master_port Application.get_env(:cache_slave, :master_port, 6667)
 
 	@delay 1000
+	@recv_length 0
 
 	def connect() do
 		opts = [:binary, :inet, active: false, packet: :line]
@@ -17,8 +19,17 @@ defmodule Cache.Connection do
 		:timer.sleep(@delay)
 
 		# "\n" is a MUST, it won't work without it, it won't be received
-		:ok = :gen_tcp.send(master_socket, System.get_env("SLAVE_NAME", "default") <> "\n")
-		Logger.info("Registered in master")
+		:ok = :gen_tcp.send(master_socket, System.get_env("SLAVE_NAME") <> "\n")
+
+		{:ok, io_data} = :gen_tcp.recv(master_socket, @recv_length)
+		io_data = String.replace(io_data, "\n", "")
+		"(map) " <> state = io_data
+		{:ok, state} = Poison.decode(state)
+		Logger.info("Received initial state from siblings")
+		Storage.update_storage(state)
+		IO.inspect(state)
+
+		Logger.info("Successfully registered to master")
 
 		{:ok, _pid} = Task.Supervisor.start_child(
 			CommandListener.Supervisor,

@@ -1,10 +1,12 @@
 FROM elixir:1.9.4
 
-COPY ./ /cache-master
-WORKDIR /cache-master
+COPY ./ /
+WORKDIR /
 
 #RUN apt update && apt install erlang-wx
-RUN mix local.hex --force
+RUN rm -rf _build/
+
+RUN mix local.hex --force && mix deps.get
 
 CMD iex -S mix
 

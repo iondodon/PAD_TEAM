@@ -83,7 +83,8 @@ def router(path):
 
         "s2-status": "type2",
         "s1-status": "type1",
-        "status" : ""
+        "status" : "",
+        "test-route": "type1"
     }
 
     allowed_paths = map_service_type_paths.keys()
@@ -134,8 +135,16 @@ def router(path):
 
     service_response = circuit_breaker.request(parameters, request.method)
 
- 
-    return service_response
+    if service_response["status"] == "success": 
+        return service_response["response"]
+
+    if service_response["status"] == "error" and service_response["message"] == "Circuit Breaker Tripped":
+        return abort(500, {"error": "Error. Service request failed. Circuit breaker tripped"})
+    
+    return abort(500, {"error": "Error in request to service"})
+
+
+
 
 
 @app.route('/service-register', methods=['POST'])

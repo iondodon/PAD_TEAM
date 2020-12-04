@@ -13,11 +13,13 @@ defmodule Cache.Command do
             ["DEL" | keys] -> {:ok, {:del, keys}}
             ["INCR", key] -> {:ok, {:incr, key}}
             ["LPUSH", key | values] -> {:ok, {:lpush, key, values}}
+            ["RPOP", key] -> {:ok, {:rpop, key}}
             ["LLEN", key] -> {:ok, {:llen, key}}
             ["LREM", key, value] -> {:ok, {:lrem, key, value}}
             ["RPOPLPUSH", key1, key2] -> {:ok, {:rpoplpush, key1, key2}}
             ["EXPIRE", key, sec] -> {:ok, {:expire, key, sec}}
             ["TTL", key] -> {:ok, {:ttl, key}}
+            ["GETSTATE"] -> {:ok, :get_state}
             _ -> {:error, :unknown_command}
           end
     end
@@ -73,6 +75,11 @@ defmodule Cache.Command do
         Storage.lpush(key, values)
     end
 
+    def run({:rpop, key}) do
+        Logger.info("RPOP #{key}")
+        Storage.rpop(key)
+    end
+
     def run({:llen, key}) do
         Logger.info("LLEN #{key}")
         Storage.llen(key)
@@ -102,5 +109,10 @@ defmodule Cache.Command do
         {sec, _} = Integer.parse(sec)
         ttl = System.os_time(:second) + sec
         Extra.set_key_ttl("ttl#" <> key, ttl)
+    end
+
+    def run(:get_state) do
+        Logger.info("GETSTATE")
+        Storage.get_storage()
     end
 end

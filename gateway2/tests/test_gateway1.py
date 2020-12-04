@@ -74,12 +74,42 @@ def request_init_student_dash(student_name, group):
 
 
 
+def request_hello_t1(method='GET'):
+    # curl -d '{"student":"Diana Marusic", "grupa": "FAF-171"}' -H 'Content-Type: application/json' http://127.0.0.1:5000/init_student
+    # endpoint = SERVER_ADDRESS + "/init-student"
+    endpoint = SERVER_ADDRESS + "/test-route"
+    parameters = {
+        "message": "hello",
+    }
+    print(colored("-------REQUEST " + endpoint, "blue"))
+    print("parameters:", parameters)
+
+    try:
+        if method=="POST":
+            r = requests.post(endpoint, json=parameters)
+        else:
+            r = requests.get(endpoint, json=parameters)
+
+        print(colored("response:---", "green"))
+        pp.pprint(r.json())
+
+
+    except Exception as e:
+        print(colored("---error in request", "red"), e)
+        print(colored("status code:"+str(r.status_code), "red"))
+        if r is not None:
+            print(colored("status code:"+str(r.status_code), "red"))
+            print(colored(str(r.text), "red"))
+
+
+
 def get_registered_services():
     # curl  http://127.0.0.1:5000/registered-services
 
     endpoint = SERVER_ADDRESS + "/registered-services"
     print(colored("-------REQUEST " + endpoint, "blue"))
 
+    r = None
     try:
         r = requests.get(endpoint)
         print(colored("response:---", "green"))
@@ -110,7 +140,9 @@ def test_gateway_http():
     # register_service(service_name="Service1", address="http://127.0.0.1:6005/", service_type="type1")
 
     get_registered_services()
-    request_init_student_dash("Diana 2", "FAF-171")
+    request_hello_t1(method='GET')
+    # request_hello_t1(method='POST')
+    # request_init_student_dash("Diana 2", "FAF-171")
 
 if __name__ == '__main__':
     # HTTP:

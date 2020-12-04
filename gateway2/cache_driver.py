@@ -29,7 +29,11 @@ class CacheDriver(object):
             # Connect the socket to the port where the server is listening
             server_address = (custom_cache_host, int(custom_cache_port))
             print (sys.stderr, 'connecting to %s port %s' % server_address)
-            self.sock.connect(server_address)
+            try:
+                self.sock.connect(server_address)
+            except:
+                # TODO!!! test_logger.error(...)
+                print("error in connect to custom cache socket!")
 
 
         def init_redis_cache(self):
@@ -78,9 +82,12 @@ class CacheDriver(object):
                 custom_cache_host = os.environ.get("CUSTOM_CACHE_HOST", 'localhost')
                 custom_cache_port = int(os.environ.get("CUSTOM_CACHE_PORT", 6666))
                 
-                # self.sock.send(message)
-                self.sock.sendto(message_command.encode(),(custom_cache_host, custom_cache_port))
-
+                try:
+                    # self.sock.send(message)
+                    self.sock.sendto(message_command.encode(),(custom_cache_host, custom_cache_port))
+                except:
+                    # TODO: log in logger
+                    print("error in send to custom cache")
 
                 sleep(1)
 
