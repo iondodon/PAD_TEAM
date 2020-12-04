@@ -1,89 +1,89 @@
 version: '3.2'
 
 services:
-  elasticsearch:
-    build:
-      context: gateway2/docker-elk/elasticsearch/
-      args:
-        ELK_VERSION: $ELK_VERSION
-    volumes:
-      - type: bind
-        source: ./gateway2/docker-elk/elasticsearch/config/elasticsearch.yml
-        target: /usr/share/elasticsearch/config/elasticsearch.yml
-        read_only: true
-      - type: volume
-        source: elasticsearch
-        target: /usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
-      ELASTIC_PASSWORD: changeme
-      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
-      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
-      discovery.type: single-node
-    networks:
-      - elk
+  # elasticsearch:
+  #   build:
+  #     context: gateway2/docker-elk/elasticsearch/
+  #     args:
+  #       ELK_VERSION: $ELK_VERSION
+  #   volumes:
+  #     - type: bind
+  #       source: ./gateway2/docker-elk/elasticsearch/config/elasticsearch.yml
+  #       target: /usr/share/elasticsearch/config/elasticsearch.yml
+  #       read_only: true
+  #     - type: volume
+  #       source: elasticsearch
+  #       target: /usr/share/elasticsearch/data
+  #   ports:
+  #     - "9200:9200"
+  #     - "9300:9300"
+  #   environment:
+  #     ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+  #     ELASTIC_PASSWORD: changeme
+  #     # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+  #     # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+  #     discovery.type: single-node
+  #   networks:
+  #     - elk
 
-  logstash:
-    build:
-      context: gateway2/docker-elk/logstash/
-      args:
-        ELK_VERSION: $ELK_VERSION
-    volumes:
-      - type: bind
-        source: ./gateway2/docker-elk/logstash/config/logstash.yml
-        target: /usr/share/logstash/config/logstash.yml
-        read_only: true
-      - type: bind
-        source: ./gateway2/docker-elk/logstash/pipeline
-        target: /usr/share/logstash/pipeline
-        read_only: true
-    ports:
-      - "5044:5044"
-      - "5000:5000/tcp"
-      - "5000:5000/udp"
-      - "9600:9600"
-    expose: [5000]
+  # logstash:
+  #   build:
+  #     context: gateway2/docker-elk/logstash/
+  #     args:
+  #       ELK_VERSION: $ELK_VERSION
+  #   volumes:
+  #     - type: bind
+  #       source: ./gateway2/docker-elk/logstash/config/logstash.yml
+  #       target: /usr/share/logstash/config/logstash.yml
+  #       read_only: true
+  #     - type: bind
+  #       source: ./gateway2/docker-elk/logstash/pipeline
+  #       target: /usr/share/logstash/pipeline
+  #       read_only: true
+  #   ports:
+  #     - "5044:5044"
+  #     - "5000:5000/tcp"
+  #     - "5000:5000/udp"
+  #     - "9600:9600"
+  #   expose: [5000]
 
-    environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
-    networks:
-      - elk
+    # environment:
+    #   LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    # networks:
+    #   - elk
 
-    depends_on:
-      - elasticsearch
+    # depends_on:
+    #   - elasticsearch
 
-  kibana:
-    build:
-      context: gateway2/docker-elk/kibana/
-      args:
-        ELK_VERSION: $ELK_VERSION
-    volumes:
-      - type: bind
-        source: ./gateway2/docker-elk/kibana/config/kibana.yml
-        target: /usr/share/kibana/config/kibana.yml
-        read_only: true
-    ports:
-      - "5601:5601"
-    networks:
-      - elk
-    depends_on:
-      - elasticsearch
+  # kibana:
+  #   build:
+  #     context: gateway2/docker-elk/kibana/
+  #     args:
+  #       ELK_VERSION: $ELK_VERSION
+  #   volumes:
+  #     - type: bind
+  #       source: ./gateway2/docker-elk/kibana/config/kibana.yml
+  #       target: /usr/share/kibana/config/kibana.yml
+  #       read_only: true
+  #   ports:
+  #     - "5601:5601"
+  #   networks:
+  #     - elk
+  #   depends_on:
+  #     - elasticsearch
 
-  redis:
-    container_name: redis
-    command: --port 6380
-    image: "redis:alpine"
-    restart: always
-    ports:
-      - 6380:6380
-    expose: [6380]
-    environment:
-      - REDIS_URL=redis://cache
-    networks:
-      - elk
+  # redis:
+  #   container_name: redis
+  #   command: --port 6380
+  #   image: "redis:alpine"
+  #   restart: always
+  #   ports:
+  #     - 6380:6380
+  #   expose: [6380]
+  #   environment:
+  #     - REDIS_URL=redis://cache
+  #   networks:
+  #     - elk
   
 
   cache-master:
@@ -138,33 +138,33 @@ services:
       - elk
 
 
-  flask-gateway:
-    # image: flask-gateway:latest
-    build: ./gateway2
+  # flask-gateway:
+  #   # image: flask-gateway:latest
+  #   build: ./gateway2
 
-    container_name: gateway2
-    environment:
-      FLASK_ENV: development
-      GATEWAY_PORT: 5003
-      REDIS_HOST: redis
-      REDIS_PORT: 6380
-      CUSTOM_CACHE_HOST: cache-master
-      CUSTOM_CACHE_PORT: 6666
-    ports:
-      - 5003:5003
-    expose: [5003]
-    # wait 15 seconds for for elk stack then run gateway
-    command: bash -c "sleep 15 && python -u gateway.py"
-    # command: bash -c "sleep 3 && python -u gateway.py"
+  #   container_name: gateway2
+  #   environment:
+  #     FLASK_ENV: development
+  #     GATEWAY_PORT: 5003
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6380
+  #     CUSTOM_CACHE_HOST: cache-master
+  #     CUSTOM_CACHE_PORT: 6666
+  #   ports:
+  #     - 5003:5003
+  #   expose: [5003]
+  #   # wait 15 seconds for for elk stack then run gateway
+  #   command: bash -c "sleep 15 && python -u gateway.py"
+  #   # command: bash -c "sleep 3 && python -u gateway.py"
 
-    depends_on:
-      - redis
-      - elasticsearch
-      - logstash
-      - kibana
+    # depends_on:
+    #   - redis
+    #   - elasticsearch
+    #   - logstash
+    #   - kibana
 
-    networks:
-      - elk
+    # networks:
+    #   - elk
 
 
 networks:
