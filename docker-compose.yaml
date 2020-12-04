@@ -1,4 +1,4 @@
-version: '3.2'
+version: '3.8'
 
 services:
   elasticsearch:
@@ -108,7 +108,7 @@ services:
     depends_on: [cache-master]
     environment:
       - SLAVE_NAME=slave1
-    command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
+    # command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
     
     networks:
       - elk
@@ -123,7 +123,7 @@ services:
     depends_on: [cache-master]
     environment:
       - SLAVE_NAME=slave1
-    command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
+    # command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
     
     networks:
       - elk
@@ -138,7 +138,7 @@ services:
     depends_on: [cache-master]
     environment:
       - SLAVE_NAME=slave2
-    command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
+    # command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
     networks:
       - elk
 
