@@ -71,7 +71,7 @@ response_caching = ResponseCaching()
 
 
 ###### Define possible cache statuses#####
-SUCCESS = 1
+SUCCESS = 1 
 CUSTOM_CACHE_FAILED = 2
 REDIS_CACHE_FAILED = 3
 BOTH_CACHES_FAILED = 4

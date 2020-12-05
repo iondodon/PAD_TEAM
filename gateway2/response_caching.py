@@ -116,7 +116,7 @@ class ResponseCaching():
         try:
             # cache.do("custom", 'GET', [key])
             # get time to live
-            ttl2 = cache.do("redis", 'ttl', [key])
+            ttl2 = cache.do("custom", 'ttl', [key])
 
         except Exception as e:
             if USE_LOGGER:
