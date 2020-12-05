@@ -26,7 +26,7 @@ from sanic_jinja2 import SanicJinja2
 
 from two_phase_commit import TwoPhaseCommit
 from response_caching import ResponseCaching
-
+from time import sleep
 import json
 
 # import threading
@@ -60,7 +60,13 @@ load_balancer = LoadBalancer()
 
 gateway = Gateway() #TODO: make singleton if needed????    
 
+
+# TODO: make it work with True!!!
+# SAVE_CACHE_RESPONSE = True
+SAVE_CACHE_RESPONSE = False
+
 response_caching = ResponseCaching()
+
 
 
 
@@ -151,6 +157,7 @@ async def router(request, path):
 
 
         r = await gateway.make_next_request(path, service_type, data, method)
+        sleep(0.3)
 
         if "status" in r and r["status"] =="error":
             if "message" in r:
@@ -169,10 +176,11 @@ async def router(request, path):
         print(colored(">>>r:", "cyan", "on_grey"), r["response"])
             
         # !!!!!!!!!!!TODO: makw this work!!!!!!!! - response caching
-        # try:
-        #     response_caching.save_response(path, data, str(r["response"]))
-        # except:
-        #     test_logger.error("ERROR! couldn't save in cache response from path " + path + " with data" + str(data) + " and response: " + r)
+        if SAVE_CACHE_RESPONSE:
+            try:
+                response_caching.save_response(path, data, str(r["response"]))
+            except:
+                test_logger.error("ERROR! couldn't save in cache response from path " + path + " with data" + str(data) + " and response: " + r)
 
 
     return response.json(r["response"])

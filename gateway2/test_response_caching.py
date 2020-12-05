@@ -5,7 +5,7 @@ from termcolor import colored
 if __name__ == '__main__':
 	response_caching = ResponseCaching()
 	
-	url = "http://localhost:8000"
+	url = "http://localhost:8001/test-route-t2"
 	parameters = {"data": "test"}
 
 

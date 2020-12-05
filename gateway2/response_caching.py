@@ -1,13 +1,17 @@
-import logging
-from logstash_async.handler import AsynchronousLogstashHandler
 import os
 from cache_driver import CacheDriver
 from termcolor import colored
+
+from time import sleep
 
 USE_LOGGER = os.environ.get("USE_LOGGER", False)
 
 
 if USE_LOGGER:
+
+    import logging
+    from logstash_async.handler import AsynchronousLogstashHandler
+
     # Setup elk stack
     # host_logger = 'localhost'
     host_logger = 'logstash'
@@ -51,6 +55,7 @@ class ResponseCaching():
 
         try:
             cache.do("redis", 'set', [key, value])
+            sleep(0.4)
             cache.do("redis", 'expire', [key, self.delta_expire])
         except Exception as e:
             if USE_LOGGER:
@@ -60,6 +65,7 @@ class ResponseCaching():
 
         try:
             cache.do("custom", 'set', [key, value])
+            sleep(0.4)
             cache.do("custom", 'expire', [key, self.delta_expire])
         except Exception as e:
             if USE_LOGGER:
