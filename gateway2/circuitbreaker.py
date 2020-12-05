@@ -1,4 +1,4 @@
-from errors_handling import CustomError, CustomError
+from errors_handling import CustomError
 import requests
 from termcolor import colored
 from jsonrpcclient import request as rpc_request

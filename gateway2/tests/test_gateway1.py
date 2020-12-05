@@ -35,7 +35,11 @@ def register_service(service_name, address, service_type):
         # r = requests.post(endpoint, data=parameters)
         r = requests.post(endpoint, json=parameters)
         print(colored("response:---", "green"))
-        pp.pprint(r.json())
+        try:
+            pp.pprint(r.content)
+            pp.pprint(r.json())
+        except:
+            pp.pprint(r)
 
     except Exception as e:
         print(colored("---error in request", "red"), e)
@@ -63,7 +67,11 @@ def request_init_student_dash(student_name, group):
     try:
         r = requests.post(endpoint, json=parameters)
         print(colored("response:---", "green"))
-        pp.pprint(r.json())
+        try:
+            pp.pprint(r.content)
+            pp.pprint(r.json())
+        except:
+            pp.pprint(r)
 
     except Exception as e:
         print(colored("---error in request", "red"), e)
@@ -91,7 +99,12 @@ def request_hello_t1(method='GET'):
             r = requests.get(endpoint, json=parameters)
 
         print(colored("response:---", "green"))
-        pp.pprint(r.json())
+        try:
+            pp.pprint(r.content)
+
+            pp.pprint(r.json())
+        except:
+            pp.pprint(r)
 
 
     except Exception as e:
@@ -113,7 +126,12 @@ def get_registered_services():
     try:
         r = requests.get(endpoint)
         print(colored("response:---", "green"))
-        pp.pprint(r.json())
+        try:
+            pp.pprint(r.content)
+            
+            pp.pprint(r.json())
+        except:
+            pp.pprint(r)
     except Exception as e:
         print(colored("---error in request", "red"), e)
         if r is not None:
@@ -139,7 +157,7 @@ def test_gateway_http():
     
     # register_service(service_name="Service1", address="http://127.0.0.1:6005/", service_type="type1")
 
-    get_registered_services()
+    # get_registered_services()
     request_hello_t1(method='GET')
     # request_hello_t1(method='POST')
     # request_init_student_dash("Diana 2", "FAF-171")

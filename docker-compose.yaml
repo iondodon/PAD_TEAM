@@ -158,9 +158,9 @@ services:
     ports:
       - 5003:5003
     expose: [5003]
-    # wait 15 seconds for for elk stack then run gateway
-    command: bash -c "sleep 15 && python -u gateway.py"
-    # command: bash -c "sleep 3 && python -u gateway.py"
+    # wait some seconds for for elk stack then run gateway
+    # command: bash -c "sleep 15 && python -u app.py"
+    command: bash -c "sleep 7 && python -u app.py"
 
     depends_on:
       - redis
