@@ -5,4 +5,4 @@ if __name__ == '__main__':
 
 	coordinator = TwoPhaseCommit()
 
-	coordinator.perform(["google.com"])
+	coordinator.perform(["http://google.com"])

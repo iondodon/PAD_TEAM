@@ -29,3 +29,8 @@
 "EXPIRE key sec" -> ...
 
 "TTL key" -> ...
+
+
+### For testing 2phase commit:
+```$ curl  -H 'Content-Type: application/json' -X POST -d '{"service_addresses":["http://service-stub-t2:8001", "http://service-stub-t1:8000"]}' http://localhost:5003/test-2pc ```
+
