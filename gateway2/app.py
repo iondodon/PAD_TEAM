@@ -23,7 +23,10 @@ from sanic.exceptions import abort
 from sanic import Sanic
 from sanic import response, request
 from sanic_jinja2 import SanicJinja2
+
 from two_phase_commit import TwoPhaseCommit
+from response_caching import ResponseCaching
+
 import json
 
 # import threading
@@ -55,11 +58,16 @@ test_logger.addHandler(async_handler)
 # Initialize load balancer
 load_balancer = LoadBalancer()
 
+gateway = Gateway() #TODO: make singleton if needed????    
+
+response_caching = ResponseCaching()
+
+
 
 ###### Define possible cache statuses#####
 SUCCESS = 1
 CUSTOM_CACHE_FAILED = 2
-cache_FAILED = 3
+REDIS_CACHE_FAILED = 3
 BOTH_CACHES_FAILED = 4
 ##########################################
 
@@ -101,14 +109,13 @@ async def index(request):
 
 
 @app.route('/<path>', methods=['GET', 'POST'])
-def router(request, path):    
+async def router(request, path):    
     test_logger.info("----Request to path:" + path)
     # print(colored("----Request to path:" + path, "yellow"))
 
     # NOTE: RPC works only with underscore(_) request, but new feature added that gateway can process both _ and - request, so we allow both
     # TODO!!! Change request paths to custom services we use!!!
     
-    gateway = Gateway() #TODO: make singleton if needed????    
 
     if not gateway.is_path_allowed(path):
         test_logger.error("ERROR: Page not found. Path " + path + " is not in allowed paths.")
@@ -128,10 +135,48 @@ def router(request, path):
     else:
         data = request.data
 
-    r = gateway.make_next_request(path, service_type, data, method)
 
-    # return response.json(r)
-    return r
+
+    if method=="GET" and response_caching.is_in_cache(path, data):
+        res = response_caching.get_from_cache(path, data)
+        print(colored("Get from cache:---", "magenta"), res)
+        return res
+    else:
+        print(colored("Not in cache, make request:---", "cyan"))
+
+        # response = requests.get(path, params=data)
+        # print("-- reponse:", response.content)  
+        # print(colored("-- reponse code:" + str( response.status_code), "blue"))
+
+
+
+        r = await gateway.make_next_request(path, service_type, data, method)
+
+        if "status" in r and r["status"] =="error":
+            if "message" in r:
+                if r["message"]=="No services available":
+                    return abort(503, {"error": r["message"]})
+                # else
+                return abort(500, {"error": r["message"]})
+            # else
+            return abort(500)
+        # else
+
+        # response_caching.save_response(path, data, response.json(r))
+        # response_caching.save_response(path, data, r)
+        # response_caching.save_response(path, data, response.html(r))
+
+        print(colored(">>>r:", "cyan", "on_grey"), r["response"])
+            
+        # !!!!!!!!!!!TODO: makw this work!!!!!!!! - response caching
+        # try:
+        #     response_caching.save_response(path, data, str(r["response"]))
+        # except:
+        #     test_logger.error("ERROR! couldn't save in cache response from path " + path + " with data" + str(data) + " and response: " + r)
+
+
+    return response.json(r["response"])
+    # return r
 
 
 
@@ -174,7 +219,7 @@ async def service_register(request):
         except Exception as e:
             test_logger.error("ERROR: Redis cache failed on command lpush at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
             test_logger.error(str(e))
-            cache_status = cache_FAILED
+            cache_status = REDIS_CACHE_FAILED
 
         try:
             cache.do("custom", 'lpush', ["services-" + str(service_type), service_address])
@@ -182,7 +227,7 @@ async def service_register(request):
         except Exception as e:
             test_logger.error("ERROR: Custom cache failed on command lpush at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
             test_logger.error(str(e))
-            cache_status = cache_FAILED if SUCCESS else BOTH_CACHES_FAILED
+            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
         
         if cache_status==BOTH_CACHES_FAILED:

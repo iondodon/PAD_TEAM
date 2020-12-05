@@ -83,7 +83,8 @@ class Gateway:
         if not self.load_balancer.any_available(service_type):
             # 503 Service Unavailable
             test_logger.error("ERROR: No service of type " + service_type + " available")
-            return abort(503, {"error": "No services available"})
+            return {"status":"error", "message":"No services available"}
+            # return abort(503, {"error": "No services available"})
 
         # print("DATA", data)
         test_logger.debug("Request data: " + str(data))
@@ -100,12 +101,19 @@ class Gateway:
         circuit_breaker = self.load_balancer.next(service_type)
 
         if circuit_breaker is None:
-            return abort(500, {"error": "Server error in load_balancer.next(...) method. No services found in cache."})
+            return {"status":"error", "message":"Server error in load_balancer.next(...) method. No services found in cache."}
+            # return abort(500, {"error": "Server error in load_balancer.next(...) method. No services found in cache."})
 
         service_response = await circuit_breaker.request(parameters, method)
 
+        # if service_response is None:
+        #     return {"status":"error", "message":"No services available"}
+        #     # return  {"status":"error", "message": "Error in request to service"}
+
+
         if service_response["status"] == "success": 
-            return response.json(service_response["response"])
+            # return response.json(service_response["response"])
+            return {"status":"success", "response":service_response["response"]}
 
         # if service_response["status"] == "error" and service_response["message"] == "Circuit Breaker Tripped":
         if service_response["status"] == "error":
@@ -115,8 +123,11 @@ class Gateway:
                 return await self.make_next_request(path, service_type, data, method, counter)
             # else
             if "message" in service_response:
-                return abort(500, {"error": service_response["message"]})
+                # return abort(500, {"error": service_response["message"]})
+                return {"status":"error", "message": service_response["message"]}
             # else:
-            return abort(500)
+            return {"status":"error"}
+            # return abort(500)
         
-        return abort(500, {"error": "Error in request to service"})
+        # return abort(500, {"error": "Error in request to service"})
+        return  {"status":"error", "message": "Error in request to service"}

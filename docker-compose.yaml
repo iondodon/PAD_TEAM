@@ -149,12 +149,13 @@ services:
 
     container_name: gateway2
     environment:
-      FLASK_ENV: development
-      GATEWAY_PORT: 5003
-      REDIS_HOST: redis
-      REDIS_PORT: 6380
-      CUSTOM_CACHE_HOST: cache-master
-      CUSTOM_CACHE_PORT: 6666
+      - FLASK_ENV=development
+      - GATEWAY_PORT=5003
+      - REDIS_HOST=redis
+      - REDIS_PORT=6380
+      - CUSTOM_CACHE_HOST=cache-master
+      - CUSTOM_CACHE_PORT=6666
+      - USE_LOGGER=True
     ports:
       - 5003:5003
     expose: [5003]
