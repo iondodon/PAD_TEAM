@@ -85,12 +85,18 @@ class CircuitBreaker:
                 print(colored("---RPC", "blue"))
 
                 route = str(params["path"]).replace("/", "").replace("-", "_")
+                
                 print("-> route:", route)
+                test_logger.info("-> route:" + str(route))
+
                 r = rpc_request(str(self.address.decode("utf-8")), route).data.result
 
                 print(colored("Response from service:----", "green"), r)
+                test_logger.info("Response from service:----" + str(r))
+
                 print(colored("Response from service decoded:----", "green"), json.loads(r))
-                # return  json.loads(r)
+                test_logger.info("Response from service:----" + str(json.loads(r)))
+
                 return {"status": "success", "response": json.loads(r)}
 
 
@@ -232,7 +238,6 @@ class CircuitBreaker:
             test_logger.error("ERROR: Redis cache delete command failed on key " + str(self.get_redis_key()))
             test_logger.error(e)
             cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
-
 
 
         if cache_status == BOTH_CACHES_FAILED:
