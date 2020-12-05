@@ -4,6 +4,7 @@ from cache_driver import CacheDriver
 import logging
 from logstash_async.handler import AsynchronousLogstashHandler
 from time import sleep
+from sanic import response
 
 
 # Setup elk stack
