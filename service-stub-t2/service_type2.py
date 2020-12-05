@@ -51,6 +51,23 @@ async def index(request):
 async def test_route(request):
     return response.json("Hello test from service of type 2!")
 
+######### routes for 2phase commit ###########
+@app.route('/prepare_transaction')
+async def prepare_transaction(request):
+    return response.json("prepared")
+    # return response.json("not prepared")
+
+@app.route('/commit_transaction')
+async def commit_transaction(request):
+    return response.json("success")
+    # return response.json("not prepared")
+
+
+@app.route('/abort_transaction')
+async def abort_transaction(request):
+    return response.json("success")
+    # return response.json("not prepared")
+
 
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=8001, debug=True)

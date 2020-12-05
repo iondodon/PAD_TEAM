@@ -157,7 +157,10 @@ class CacheDriver(object):
 
         def __del__(self):
             print(sys.stderr, 'closing socket')
-            self.sock.close()
+            try:
+                self.sock.close()
+            except:
+                print("Error, socket in CacheDriver can't be closed!")
 
 
         def __str__(self):

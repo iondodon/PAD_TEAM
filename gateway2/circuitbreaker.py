@@ -52,9 +52,10 @@ class CircuitBreaker:
         print(colored("Request failed", "red"))
         print(colored("--request:", "red"), request)
         print(colored("--exception:", "red"), exception)
+        test_logger.error("Request " + str(request) + " failed with exception: "+ str(exception))
+
 
     async def request(self, params, method):
-
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
                 + "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in class CircuitBreaker")

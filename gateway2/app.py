@@ -23,7 +23,7 @@ from sanic.exceptions import abort
 from sanic import Sanic
 from sanic import response, request
 from sanic_jinja2 import SanicJinja2
-
+from two_phase_commit import TwoPhaseCommit
 import json
 
 # import threading
@@ -71,6 +71,35 @@ async def index(request):
     return response.json("Hello!")
 
 
+# @app.route('/test-2pc', methods=['GET', 'POST'])
+@app.route('/test-2pc', methods=['POST'])
+async def index(request):
+    test_logger.info("Test 2 phase commit at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
+
+    # data = request.data in sanic doesn't exist
+    data = request.json
+    print(colored("json:", "red"), request.json)
+    print(colored("args:", "red"), request.args)
+
+    
+    print(colored("Test 2Phase Commit 2PC", "yellow"))
+
+    try:
+        coordinator = TwoPhaseCommit()
+        res = coordinator.perform(data["service_addresses"])
+        if res == "success":
+            test_logger.info("2pc succeeded")
+            return response.json({"status": "success", "message":"2pc succeeded"})
+        else:
+            test_logger.info("2pc aborted, one or more services not ready")
+            return response.json({"status": "aborted", "message":"2pc aborted, one or more services not ready"})
+    except:
+        test_logger.error("2phase commit failed with some errors")    
+        return abort(500, "2phase commit failed with some errors")
+
+    return response.json("2pc")
+
+
 @app.route('/<path>', methods=['GET', 'POST'])
 def router(request, path):    
     test_logger.info("----Request to path:" + path)
@@ -92,7 +121,8 @@ def router(request, path):
         data = request.args
         method = "GET"
     elif request.method == 'POST':
-        data = request.data
+        # data = request.data
+        data = request.json
         method = "POST"
         # data = request.form
     else:

@@ -55,6 +55,24 @@ def test_route(request):
     return response.json("Hello test from service of type 1!")
 
 
+######### routes for 2phase commit ###########
+@app.route('/prepare_transaction')
+async def prepare_transaction(request):
+    return response.json("prepared")
+    # return response.json("not prepared")
+
+@app.route('/commit_transaction')
+async def commit_transaction(request):
+    return response.json("success")
+    # return response.json("not prepared")
+
+
+@app.route('/abort_transaction')
+async def abort_transaction(request):
+    return response.json("success")
+    # return response.json("not prepared")
+
+
 if __name__ == '__main__':    
     # app.run(host='127.0.0.1', port=8000, debug=True)
     # 0.0.0.0 accesibil din retea
