@@ -28,6 +28,8 @@ test_logger.addHandler(async_handler)
 
 
 class Gateway:
+    MAX_RETRIES = 5
+
     map_service_type_paths = {
         "init-student" : "type1",
         "init_student" : "type1",
@@ -77,7 +79,7 @@ class Gateway:
         return service_type
 
 
-    async def make_next_request(self, path, service_type, data, method):
+    async def make_next_request(self, path, service_type, data, method, counter=0):
         if not self.load_balancer.any_available(service_type):
             # 503 Service Unavailable
             test_logger.error("ERROR: No service of type " + service_type + " available")
@@ -106,10 +108,15 @@ class Gateway:
             return response.json(service_response["response"])
 
         # if service_response["status"] == "error" and service_response["message"] == "Circuit Breaker Tripped":
-        if service_response["status"] == "error" and "message" in service_response:
-            return abort(500, {"error": service_response["message"]})
-
         if service_response["status"] == "error":
+
+            if counter < self.MAX_RETRIES:
+                counter += 1
+                return await self.make_next_request(path, service_type, data, method, counter)
+            # else
+            if "message" in service_response:
+                return abort(500, {"error": service_response["message"]})
+            # else:
             return abort(500)
         
         return abort(500, {"error": "Error in request to service"})

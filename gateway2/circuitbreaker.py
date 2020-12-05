@@ -126,7 +126,7 @@ class CircuitBreaker:
 
                 print(colored("---rs:", "blue"), rs)
 
-                if rs:
+                if rs and rs[0]:
                     # json_response = [r.json() for res in rs]
                     json_response = rs[0].json()
                     # json_response = r.json()

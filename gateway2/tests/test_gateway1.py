@@ -196,7 +196,7 @@ def test_gateway_http():
 
     get_registered_services()
     request_hello_t1(method='GET')
-    # request_hello_t2(method='GET')
+    request_hello_t2(method='GET')
     # request_hello_t1(method='POST')
     # request_init_student_dash("Diana 2", "FAF-171")
 
