@@ -2,11 +2,12 @@ from errors_handling import CustomError
 from termcolor import colored
 # from jsonrpcclient import request as rpc_request
 # import json
-from flask import request, abort
+from flask import abort
 from loadbalancer import LoadBalancer
 
 import logging
 from logstash_async.handler import AsynchronousLogstashHandler
+from sanic import response
 
 # from cache_driver import CacheDriver
 
@@ -49,7 +50,9 @@ class Gateway:
         "s2-status": "type2",
         "s1-status": "type1",
         "status" : "",
-        "test-route": "type1"
+
+        "test-route": "type1",
+        "test-route-t2": "type2"
     }
 
     def __init__(self):
@@ -73,18 +76,8 @@ class Gateway:
 
         return service_type
 
-    def get_data_from_request(self, request):
-        if request.method == 'GET':
-            data = request.args
-        elif request.method == 'POST':
-            data = request.data
-            # data = request.form
-        else:
-            data = request.data
 
-        return data
-
-    def make_next_request(self, path, service_type, data):
+    async def make_next_request(self, path, service_type, data, method):
         if not self.load_balancer.any_available(service_type):
             # 503 Service Unavailable
             test_logger.error("ERROR: No service of type " + service_type + " available")
@@ -107,12 +100,16 @@ class Gateway:
         if circuit_breaker is None:
             return abort(500, {"error": "Server error in load_balancer.next(...) method. No services found in cache."})
 
-        service_response = circuit_breaker.request(parameters, request.method)
+        service_response = await circuit_breaker.request(parameters, method)
 
         if service_response["status"] == "success": 
-            return service_response["response"]
+            return response.json(service_response["response"])
 
-        if service_response["status"] == "error" and service_response["message"] == "Circuit Breaker Tripped":
-            return abort(500, {"error": "Error. Service request failed. Circuit breaker tripped"})
+        # if service_response["status"] == "error" and service_response["message"] == "Circuit Breaker Tripped":
+        if service_response["status"] == "error" and "message" in service_response:
+            return abort(500, {"error": service_response["message"]})
+
+        if service_response["status"] == "error":
+            return abort(500)
         
         return abort(500, {"error": "Error in request to service"})

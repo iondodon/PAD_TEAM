@@ -1,9 +1,12 @@
 from errors_handling import CustomError
-import requests
+# import requests
+import grequests
+
 from termcolor import colored
 from jsonrpcclient import request as rpc_request
 import json
 from flask import abort
+from sanic import response
 
 import logging
 from logstash_async.handler import AsynchronousLogstashHandler
@@ -45,13 +48,19 @@ class CircuitBreaker:
         self.service_type = service_type
 
 
-    def request(self, params, method):
+    def exception_handler(self, request, exception):
+        print(colored("Request failed", "red"))
+        print(colored("--request:", "red"), request)
+        print(colored("--exception:", "red"), exception)
+
+    async def request(self, params, method):
 
         if self.TYPE_REQUESTS not in ['RPC', 'HTTP']:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
                 + "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in class CircuitBreaker")
 
-            return abort(500, {"error": "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in circuitbreaker!!!"})
+            # return abort(500, {"error": "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in circuitbreaker!!!"})
+            return {"status": "error", "message": "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in circuitbreaker!!!"}
         
 
         if self.tripped:
@@ -89,30 +98,63 @@ class CircuitBreaker:
                 test_logger.info("Request type: HTTP")
                 print("---HTTP")
 
+                r = None
+
                 if method=='GET':
                     # r = requests.get(endpoint, params=params["parameters"].decode("utf-8"))
-                    r = requests.get(endpoint, params=params["parameters"])
+                    # r = requests.get(endpoint, params=params["parameters"])
+                    r = grequests.get(endpoint, params=params["parameters"])
+                    rs = grequests.map([r], exception_handler=self.exception_handler)
+                
                 elif method=='POST':
                     # r = requests.post(endpoint, data=params["parameters"].decode("utf-8"), json=params["parameters"].decode("utf-8"))
-                    r = requests.post(endpoint, data=params["parameters"], json=params["parameters"])
+                    # r = requests.post(endpoint, data=params["parameters"], json=params["parameters"])
+                    r = grequests.post(endpoint, data=params["parameters"], json=params["parameters"])
+                    rs = grequests.map([r], exception_handler=self.exception_handler)
+                
                 elif method=='PUT':
                     # r = requests.put(endpoint, data=params["parameters"].decode("utf-8"), json=params["parameters"].decode("utf-8"))
-                    r = requests.put(endpoint, data=params["parameters"], json=params["parameters"])
+                    # r = requests.put(endpoint, data=params["parameters"], json=params["parameters"])
+                    r = grequests.put(endpoint, data=params["parameters"], json=params["parameters"])
+                    rs = grequests.map([r], exception_handler=self.exception_handler)
+                
                 elif method=='DELETE':
-                    r = requests.delete(endpoint)
+                    # r = requests.delete(endpoint)
+                    r = grequests.delete(endpoint)
+                    rs = grequests.map([r], exception_handler=self.exception_handler)
+                
+
+                print(colored("---rs:", "blue"), rs)
+
+                if rs:
+                    # json_response = [r.json() for res in rs]
+                    json_response = rs[0].json()
+                    # json_response = r.json()
+                else:
+                    json_response = {"error, rs is none"}
+                
 
                 test_logger.debug("Request: " + str(r))
                 print(r)    
-                data = r.json()
+                # data = r.json()
+                # data = json.loads(r)
+                data = json_response
                 
                 test_logger.debug("Data: " + str(data))
                 print(data)
                 
-                test_logger.debug("Response from service:" + str(r.json()))
-                print(colored("Response from service:----", "green"), r.json())
+                # test_logger.debug("Response from service:" + str(r.json()))
+                # test_logger.debug("Response from service:" + json.loads(r))
+                test_logger.debug("Response from service:" + json_response)
+                # print(colored("Response from service:----", "green"), json.loads(r))
+                print(colored("Response from service:----", "green"), json_response)
 
                 # return r.json()
-                return {"status": "success", "response": r.json()}
+                # return {"status": "success", "response": r.json()}
+                # return {"status": "success", "response": json.loads(r)}
+                
+                return {"status": "success", "response": json_response}
+
                        
         except Exception as e:
             nr_requests_failed = 0

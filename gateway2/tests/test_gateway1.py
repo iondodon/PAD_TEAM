@@ -30,13 +30,15 @@ def register_service(service_name, address, service_type):
     }
     print(colored("-------REQUEST " + endpoint, "blue"))
     print("parameters:", parameters)
+    
+    r = None
 
     try:
         # r = requests.post(endpoint, data=parameters)
         r = requests.post(endpoint, json=parameters)
         print(colored("response:---", "green"))
         try:
-            pp.pprint(r.content)
+            print(r.content)
             pp.pprint(r.json())
         except:
             pp.pprint(r)
@@ -64,18 +66,19 @@ def request_init_student_dash(student_name, group):
     print(colored("-------REQUEST " + endpoint, "blue"))
     print("parameters:", parameters)
 
+    r = None
+
     try:
         r = requests.post(endpoint, json=parameters)
         print(colored("response:---", "green"))
         try:
-            pp.pprint(r.content)
+            print(r.content)
             pp.pprint(r.json())
         except:
             pp.pprint(r)
 
     except Exception as e:
         print(colored("---error in request", "red"), e)
-        print(colored("status code:"+str(r.status_code), "red"))
         if r is not None:
             print(colored("status code:"+str(r.status_code), "red"))
             print(colored(str(r.text), "red"))
@@ -92,6 +95,8 @@ def request_hello_t1(method='GET'):
     print(colored("-------REQUEST " + endpoint, "blue"))
     print("parameters:", parameters)
 
+    r = None
+
     try:
         if method=="POST":
             r = requests.post(endpoint, json=parameters)
@@ -100,7 +105,7 @@ def request_hello_t1(method='GET'):
 
         print(colored("response:---", "green"))
         try:
-            pp.pprint(r.content)
+            print(r.content)
 
             pp.pprint(r.json())
         except:
@@ -109,7 +114,41 @@ def request_hello_t1(method='GET'):
 
     except Exception as e:
         print(colored("---error in request", "red"), e)
-        print(colored("status code:"+str(r.status_code), "red"))
+        if r is not None:
+            print(colored("status code:"+str(r.status_code), "red"))
+            print(colored(str(r.text), "red"))
+
+
+
+def request_hello_t2(method='GET'):
+    # curl -d '{"student":"Diana Marusic", "grupa": "FAF-171"}' -H 'Content-Type: application/json' http://127.0.0.1:5000/init_student
+    # endpoint = SERVER_ADDRESS + "/init-student"
+    endpoint = SERVER_ADDRESS + "/test-route-t2"
+    parameters = {
+        "message": "hello",
+    }
+    print(colored("-------REQUEST " + endpoint, "blue"))
+    print("parameters:", parameters)
+
+    r = None
+
+    try:
+        if method=="POST":
+            r = requests.post(endpoint, json=parameters)
+        else:
+            r = requests.get(endpoint, json=parameters)
+
+        print(colored("response:---", "green"))
+        try:
+            print(r.content)
+
+            pp.pprint(r.json())
+        except:
+            pp.pprint(r)
+
+
+    except Exception as e:
+        print(colored("---error in request", "red"), e)
         if r is not None:
             print(colored("status code:"+str(r.status_code), "red"))
             print(colored(str(r.text), "red"))
@@ -127,15 +166,13 @@ def get_registered_services():
         r = requests.get(endpoint)
         print(colored("response:---", "green"))
         try:
-            pp.pprint(r.content)
-            
+            print(r.content)
             pp.pprint(r.json())
         except:
             pp.pprint(r)
     except Exception as e:
         print(colored("---error in request", "red"), e)
         if r is not None:
-            print(colored("status code:"+str(r.status_code), "red"))
             print(colored(str(r.text), "red"))
         
 
@@ -157,8 +194,9 @@ def test_gateway_http():
     
     # register_service(service_name="Service1", address="http://127.0.0.1:6005/", service_type="type1")
 
-    # get_registered_services()
+    get_registered_services()
     request_hello_t1(method='GET')
+    # request_hello_t2(method='GET')
     # request_hello_t1(method='POST')
     # request_init_student_dash("Diana 2", "FAF-171")
 

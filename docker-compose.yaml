@@ -24,7 +24,7 @@ services:
       # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
     networks:
-      - elk
+      - my_network
 
   logstash:
     build:
@@ -50,7 +50,7 @@ services:
     environment:
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     networks:
-      - elk
+      - my_network
 
     depends_on:
       - elasticsearch
@@ -68,7 +68,7 @@ services:
     ports:
       - "5601:5601"
     networks:
-      - elk
+      - my_network
     depends_on:
       - elasticsearch
 
@@ -83,7 +83,7 @@ services:
     environment:
       - REDIS_URL=redis://cache
     networks:
-      - elk
+      - my_network
   
 
   cache-master:
@@ -96,7 +96,7 @@ services:
     ports:
       - 6666:6666
     networks:
-      - elk
+      - my_network
 
   cache-slave1-replica1:
     build: ./cache-slave
@@ -111,7 +111,7 @@ services:
     # command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
     
     networks:
-      - elk
+      - my_network
 
   cache-slave1-replica2:
     build: ./cache-slave
@@ -126,7 +126,7 @@ services:
     # command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
     
     networks:
-      - elk
+      - my_network
 
   cache-slave2-replica1:
     build: ./cache-slave
@@ -140,7 +140,7 @@ services:
       - SLAVE_NAME=slave2
     # command: bash -c "mix local.hex --force && mix deps.get && iex -S mix"
     networks:
-      - elk
+      - my_network
 
 
   flask-gateway:
@@ -159,21 +159,50 @@ services:
       - 5003:5003
     expose: [5003]
     # wait some seconds for for elk stack then run gateway
-    # command: bash -c "sleep 15 && python -u app.py"
-    command: bash -c "sleep 7 && python -u app.py"
+    command: bash -c "sleep 5 && python -u app.py"
 
     depends_on:
       - redis
       - elasticsearch
       - logstash
       - kibana
-
     networks:
-      - elk
+      - my_network
+
+  service-stub-t1:
+    container_name: service-stub-t1
+    build: ./service-stub-t1
+    environment:
+      SERVICE_MY_ADDRESS: http://service-stub-t1:8000
+      GATEWAY_ADDRESS: http://flask-gateway:5003
+    ports:
+      - 8000:8000
+    expose: [8000]
+    command: bash -c "sleep 15 && python -u service_type1.py"
+    depends_on:
+      - flask-gateway
+    networks:
+      - my_network
+
+
+  service-stub-t2:
+    container_name: service-stub-t2
+    build: ./service-stub-t2
+    environment:
+      SERVICE_MY_ADDRESS: http://service-stub-t2:8001
+      GATEWAY_ADDRESS: http://flask-gateway:5003
+    ports:
+      - 8001:8001
+    expose: [8001]
+    command: bash -c "sleep 16 && python -u service_type2.py"
+    depends_on:
+      - flask-gateway
+    networks:
+      - my_network
 
 
 networks:
-  elk:
+  my_network:
     driver: bridge
 
 volumes:

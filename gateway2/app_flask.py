@@ -1,4 +1,6 @@
 #!flask/bin/python
+from flask import Flask
+from flask import request, abort
 import json
 import redis
 import requests
@@ -18,21 +20,7 @@ from cache_driver import CacheDriver
 import os
 from errors_handling import CustomError
 
-from sanic.exceptions import abort
-
-from sanic import Sanic
-from sanic import response, request
-from sanic_jinja2 import SanicJinja2
-
-import json
-
-# import threading
-# import requests
-
-app = Sanic(__name__)
-
-jinja = SanicJinja2(app, autoescape=True)
-
+app = Flask(__name__)
 # if this is set to false and in docker flask_env is not development, the "debug" logging will not be shown
 app.config['DEBUG'] = True
 
@@ -64,15 +52,14 @@ BOTH_CACHES_FAILED = 4
 ##########################################
 
 @app.route('/')
-async def index(request):
+def index():
     # test_logger.info("Hello from flask at %s", time.time())
     test_logger.info("Hello from flask at %s", strftime("%d-%m-%Y %H:%M:%S", gmtime()))
 
-    return response.json("Hello!")
-
+    return "Hello!"
 
 @app.route('/<path>', methods=['GET', 'POST'])
-def router(request, path):    
+def router(path):    
     test_logger.info("----Request to path:" + path)
     # print(colored("----Request to path:" + path, "yellow"))
 
@@ -86,28 +73,15 @@ def router(request, path):
         return abort(404)
 
     service_type = gateway.get_service_type(path)
-    
 
-    if request.method == 'GET':
-        data = request.args
-        method = "GET"
-    elif request.method == 'POST':
-        data = request.data
-        method = "POST"
-        # data = request.form
-    else:
-        data = request.data
+    data = gateway.get_data_from_request(request)
 
-    r = gateway.make_next_request(path, service_type, data, method)
-
-    # return response.json(r)
-    return r
-
+    return gateway.make_next_request(path, service_type, data)
 
 
 
 @app.route('/service-register', methods=['POST'])
-async def service_register(request):    
+def service_register():    
     # print(request.data)
     # print(request.json)
     test_logger.info("Service discovered!")
@@ -164,8 +138,7 @@ async def service_register(request):
                                     + "of type " + str(service_type) 
                                     + " with address " + str(service_address) 
                                     + " registered!")
-
-        return response.json({"status": "success", "message": "Service registered"})
+        return {"status": "success", "message": "Service registered"}
     except Exception as e:
         test_logger.error("ERROR: Service " + str(service_name) + "  not registered. Somethig went wrong. Error:" + str(e))
         return abort(500, {"error:", "ERROR! Service not registered. Somethig went wrong"})
@@ -173,7 +146,7 @@ async def service_register(request):
 
 
 @app.route('/registered-services')
-async def get_registered_services(request):
+def get_registered_services():
     result = {}
 
     
@@ -198,7 +171,7 @@ async def get_registered_services(request):
         except Exception as e:
             test_logger.error("ERROR: Alert! Both caches failed on command lrange!!!." + str(e))
             # return abort(500, "Error: Both caches failed!")
-            return response.json({"registered_services-type1": [], "registered_services-type2": [], "status": "Both caches failed so no available service for now"})
+            return {"registered_services-type1": [], "registered_services-type2": [], "status": "Both caches failed so no available service for now"}
 
 
     print(colored('--l_type1:', 'blue'), l_type1)
@@ -216,7 +189,7 @@ async def get_registered_services(request):
         result_type2 = [x for x in l_type2]
 
     test_logger.info({"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)})
-    return response.json({"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)})
+    return {"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)}
 
 
 

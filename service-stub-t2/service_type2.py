@@ -15,16 +15,13 @@ jinja = SanicJinja2(app, autoescape=True)
 
 @app.listener('before_server_start')
 def register_myself(sanic, loop):
-    try:
-        # r = requests.get('http://127.0.0.1:5000/')
-        # r = requests.get('http://localhost:5003/registered-services')
-        
-        my_address = os.environ.get("SERVICE_MY_ADDRESS", 'http://localhost:8000')
+    try:    
+        my_address = os.environ.get("SERVICE_MY_ADDRESS", 'http://localhost:8001')
 
         params = {
             "address": my_address + "/",
-            "type":"type1", 
-            "service_name": "service-stub-t1"
+            "type":"type2", 
+            "service_name": "service-stub-t2"
         }
 
         gateway_address = os.environ.get('GATEWAY_ADDRESS', 'http://localhost:5003')
@@ -50,13 +47,10 @@ async def index(request):
     return response.json({"server status": "up and running", "message":"Hello!"})
 
 
-@app.route('/test-route')
-def test_route(request):
+@app.route('/test-route-t2')
+async def test_route(request):
     return response.json("Hello test!")
 
 
 if __name__ == '__main__':    
-    # app.run(host='127.0.0.1', port=8000, debug=True)
-    # 0.0.0.0 accesibil din retea
-    
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=8001, debug=True)
