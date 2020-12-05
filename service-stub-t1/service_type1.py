@@ -52,7 +52,7 @@ async def index(request):
 
 @app.route('/test-route')
 def test_route(request):
-    return response.json("Hello test!")
+    return response.json("Hello test from service of type 1!")
 
 
 if __name__ == '__main__':    
