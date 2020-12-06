@@ -62,8 +62,8 @@ gateway = Gateway() #TODO: make singleton if needed????
 
 
 # TODO: make it work with True!!!
-# SAVE_CACHE_RESPONSE = True
-SAVE_CACHE_RESPONSE = False
+SAVE_CACHE_RESPONSE = True
+# SAVE_CACHE_RESPONSE = False
 
 response_caching = ResponseCaching()
 
@@ -146,7 +146,10 @@ async def router(request, path):
     if method=="GET" and response_caching.is_in_cache(path, data):
         res = response_caching.get_from_cache(path, data)
         print(colored("Get from cache:---", "magenta"), res)
-        return res
+        if type(res) is bytes:
+            res = res.decode('utf8')
+            
+        return response.json(res)
     else:
         print(colored("Not in cache, make request:---", "cyan"))
 
