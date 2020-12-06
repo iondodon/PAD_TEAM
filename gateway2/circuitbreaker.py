@@ -74,7 +74,10 @@ class CircuitBreaker:
 
         # pentru redis trebuie decode:
         # endpoint = str(self.address.decode("utf-8") ) + str(params["path"]).replace("/", "")
-        endpoint = str(self.address ) + str(params["path"]).replace("/", "")
+        if self.address is None or self.address=="":
+            return {"status": "error", "message":"Service unavailable"}
+
+        endpoint = str(self.address) + str(params["path"]).replace("/", "")
 
         print(colored("service endpoint:---" + endpoint, "cyan"))
 

@@ -63,15 +63,15 @@ class ResponseCaching():
                 test_logger.error(str(e))
             cache_status = REDIS_CACHE_FAILED
 
-        try:
-            cache.do("custom", 'set', [key, value])
-            sleep(0.4)
-            cache.do("custom", 'expire', [key, self.delta_expire])
-        except Exception as e:
-            if USE_LOGGER:
-                test_logger.error(err_prefix + "Custom cache failed on command SET & EXPIRE key: " + key + " value: " + value)
-                test_logger.error(str(e))
-            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+        # try:
+        #     cache.do("custom", 'set', [key, value])
+        #     sleep(0.4)
+        #     # cache.do("custom", 'expire', [key, self.delta_expire])
+        # except Exception as e:
+        #     if USE_LOGGER:
+        #         test_logger.error(err_prefix + "Custom cache failed on command SET & EXPIRE key: " + key + " value: " + value)
+        #         test_logger.error(str(e))
+        #     cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
         
         if cache_status==BOTH_CACHES_FAILED:
@@ -113,20 +113,20 @@ class ResponseCaching():
 
             cache_status = REDIS_CACHE_FAILED
 
-        try:
-            # cache.do("custom", 'GET', [key])
-            # get time to live
-            ttl2 = cache.do("redis", 'ttl', [key])
+        # try:
+        #     # cache.do("custom", 'GET', [key])
+        #     # get time to live
+        #     ttl2 = cache.do("custom", 'ttl', [key])
 
-        except Exception as e:
-            if USE_LOGGER:
-                test_logger.error(err_prefix + "Custom cache failed on command GET key: " + key)
-                test_logger.error(str(e))
-            else:
-                print(err_prefix + "Custom cache failed on command GET key: " + key)
-                print(str(e))
+        # except Exception as e:
+        #     if USE_LOGGER:
+        #         test_logger.error(err_prefix + "Custom cache failed on command GET key: " + key)
+        #         test_logger.error(str(e))
+        #     else:
+        #         print(err_prefix + "Custom cache failed on command GET key: " + key)
+        #         print(str(e))
 
-            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+        #     cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
         
         if cache_status==BOTH_CACHES_FAILED:
@@ -164,18 +164,18 @@ class ResponseCaching():
                 print(str(e))
             cache_status = REDIS_CACHE_FAILED
 
-        try:
-            result2 = cache.do("custom", 'get', [key])
+        # try:
+        #     result2 = cache.do("custom", 'get', [key])
 
-        except Exception as e:
-            if USE_LOGGER:
-                test_logger.error(err_prefix + "Custom cache failed on command GET key: " + key)
-                test_logger.error(str(e))
-            else:
-                print(err_prefix + "Custom cache failed on command GET key: " + key)
-                print(str(e))
+        # except Exception as e:
+        #     if USE_LOGGER:
+        #         test_logger.error(err_prefix + "Custom cache failed on command GET key: " + key)
+        #         test_logger.error(str(e))
+        #     else:
+        #         print(err_prefix + "Custom cache failed on command GET key: " + key)
+        #         print(str(e))
 
-            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+        #     cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
         
         if cache_status==BOTH_CACHES_FAILED:
@@ -207,13 +207,13 @@ class ResponseCaching():
                 test_logger.error(str(e))
             cache_status = REDIS_CACHE_FAILED
 
-        try:
-            cache.do("custom", 'delete', [key])
-        except Exception as e:
-            if USE_LOGGER:
-                test_logger.error(err_prefix + "Custom cache failed on command DELETE key: " + key )
-                test_logger.error(str(e))
-            cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
+        # try:
+        #     cache.do("custom", 'delete', [key])
+        # except Exception as e:
+        #     if USE_LOGGER:
+        #         test_logger.error(err_prefix + "Custom cache failed on command DELETE key: " + key )
+        #         test_logger.error(str(e))
+        #     cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
         
         if cache_status==BOTH_CACHES_FAILED:
