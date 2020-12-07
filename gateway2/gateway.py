@@ -1,7 +1,6 @@
 from errors_handling import CustomError
 from termcolor import colored
-# from jsonrpcclient import request as rpc_request
-# import json
+
 from flask import abort
 from loadbalancer import LoadBalancer
 
@@ -9,7 +8,6 @@ import logging
 from logstash_async.handler import AsynchronousLogstashHandler
 from sanic import response
 
-# from cache_driver import CacheDriver
 
 
 # Setup elk stack
@@ -58,7 +56,6 @@ class Gateway:
     }
 
     def __init__(self):
-        # TODO; test
         self.load_balancer = LoadBalancer()
 
     def is_path_allowed(self, path):
@@ -81,53 +78,38 @@ class Gateway:
 
     async def make_next_request(self, path, service_type, data, method, counter=0):
         if not self.load_balancer.any_available(service_type):
-            # 503 Service Unavailable
             test_logger.error("ERROR: No service of type " + service_type + " available")
             return {"status":"error", "message":"No services available"}
-            # return abort(503, {"error": "No services available"})
 
-        # print("DATA", data)
         test_logger.debug("Request data: " + str(data))
 
         parameters = {
-            # "path": request.path,
             "path": path,
             "parameters": data
         }
 
         test_logger.debug("Parameters " + str(parameters))
-        # print(colored("parameters:", "magenta"), parameters)
 
         circuit_breaker = self.load_balancer.next(service_type)
 
         if circuit_breaker is None:
             return {"status":"error", "message":"Server error in load_balancer.next(...) method. No services found in cache."}
-            # return abort(500, {"error": "Server error in load_balancer.next(...) method. No services found in cache."})
 
         service_response = await circuit_breaker.request(parameters, method)
 
-        # if service_response is None:
-        #     return {"status":"error", "message":"No services available"}
-        #     # return  {"status":"error", "message": "Error in request to service"}
 
-
-        if service_response["status"] == "success": 
-            # return response.json(service_response["response"])
+        if "status" in service_response and service_response["status"] == "success": 
             return {"status":"success", "response":service_response["response"]}
 
-        # if service_response["status"] == "error" and service_response["message"] == "Circuit Breaker Tripped":
-        if service_response["status"] == "error":
 
+        if "status" in service_response and service_response["status"] == "error":
             if counter < self.MAX_RETRIES:
                 counter += 1
                 return await self.make_next_request(path, service_type, data, method, counter)
-            # else
+
             if "message" in service_response:
-                # return abort(500, {"error": service_response["message"]})
                 return {"status":"error", "message": service_response["message"]}
-            # else:
+
             return {"status":"error"}
-            # return abort(500)
         
-        # return abort(500, {"error": "Error in request to service"})
         return  {"status":"error", "message": "Error in request to service"}

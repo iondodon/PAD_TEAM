@@ -36,9 +36,8 @@ BOTH_CACHES_FAILED = 4
 ##########################################
 
 
-# TODO: make singleton??!
 class ResponseCaching():
-    delta_expire = 20 # save request in cache for delta seconds
+    delta_expire = 15 # save request in cache for delta seconds
 
     def __init__(self):
         self.cache = CacheDriver()
@@ -51,7 +50,6 @@ class ResponseCaching():
 
         key = "response_cached:" + url + "|" + "p:" + str(parameters) 
         value = response
-        # value = "p:" + str(parameters) + "|" + response
 
         try:
             cache.do("redis", 'set', [key, value])
@@ -92,14 +90,12 @@ class ResponseCaching():
 
         cache = self.cache
 
-        # key = "response_cached:" + url
         key = "response_cached:" + url + "|" + "p:" + str(parameters) 
 
         ttl1 = 0
         ttl2 = 0
 
         try:
-            # cache.do("redis", 'GET', [key])
             # get time to live
             ttl1 = cache.do("redis", 'ttl', [key])
 
@@ -114,7 +110,6 @@ class ResponseCaching():
             cache_status = REDIS_CACHE_FAILED
 
         # try:
-        #     # cache.do("custom", 'GET', [key])
         #     # get time to live
         #     ttl2 = cache.do("custom", 'ttl', [key])
 
@@ -147,7 +142,6 @@ class ResponseCaching():
 
         cache = self.cache
 
-        # key = "response_cached:" + url
         key = "response_cached:" + url + "|" + "p:" + str(parameters) 
 
         result1 = None
@@ -196,7 +190,6 @@ class ResponseCaching():
 
         cache = self.cache
 
-        # key = "response_cached:" + url
         key = "response_cached:" + url + "|" + "p:" + str(parameters) 
 
         try:

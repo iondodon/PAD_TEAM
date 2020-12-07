@@ -66,16 +66,12 @@ class LoadBalancer:
         if len_services2 is None or type(len_services2) is not int:
             len_services2 = 0
 
-        # return len_services
         return max(int(len_services1), int(len_services2))>0 #will return true or false
 
         
 
     def next(self, service_type):
-        # circuitbreaker = CircuitBreaker(redis_cache.rpoplpush("services-"+str(service_type), "services-"+str(service_type)), service_type)
-        # service = redis_cache.rpoplpush("services-"+str(service_type), "services-"+str(service_type))
         cache_status = SUCCESS
-
 
         sleep(0.3)  #give some time for processing previous request
         cache = CacheDriver()
@@ -99,8 +95,6 @@ class LoadBalancer:
             test_logger.error("ERROR: Redis cache rpoplpush command failed on" + str(["services-"+str(service_type), "services-"+str(service_type)]))
             test_logger.error(str(e))
             cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
-            
-        
 
         if cache_status == BOTH_CACHES_FAILED:
             test_logger.error("ERROR: Alert! Both caches rpoplpush command failed on " + str(["services-"+str(service_type), "services-"+str(service_type)]))

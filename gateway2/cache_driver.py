@@ -20,6 +20,8 @@ class CacheDriver(object):
                 self.init_redis_cache()
 
         def init_custom_cache(self):
+            """ Setup custom cache """
+
             # Create a TCP/IP socket
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -32,19 +34,13 @@ class CacheDriver(object):
             try:
                 self.sock.connect(server_address)
             except:
-                # TODO!!! test_logger.error(...)
                 print("error in connect to custom cache socket!")
 
 
         def init_redis_cache(self):
-            """Setup Redis cache"""
-            # from local:
+            """ Setup Redis cache """
             redis_host = os.environ.get("REDIS_HOST", 'localhost')
             redis_port = os.environ.get("REDIS_PORT", 6379)
-
-            # self.cache = redis.Redis(host='localhost', port=6379, db=0)
-            # from docker-compose:
-            # self.cache = redis.Redis(host='redis', port=6380, db=0)
 
             self.cache = redis.Redis(host=redis_host, port=redis_port, db=0)
 
@@ -54,7 +50,7 @@ class CacheDriver(object):
             """ Perform a command to the cache with the required arguments in the form of a list"""
             if self.cache_type=='custom':
 
-                 # Send data
+                # Send data
                 message_command = command.upper()
 
                 new_args = args
@@ -75,7 +71,6 @@ class CacheDriver(object):
 
 
                 message = bytes(message_command, 'utf-8')
-                # message = bytes(message_command, 'ascii')
                 # message = message_command
                 print(sys.stderr, 'sending "%s"' % message)
 
@@ -86,7 +81,6 @@ class CacheDriver(object):
                     # self.sock.send(message)
                     self.sock.sendto(message_command.encode(),(custom_cache_host, custom_cache_port))
                 except:
-                    # TODO: log in logger
                     print("error in send to custom cache")
 
                 sleep(1)
@@ -103,14 +97,12 @@ class CacheDriver(object):
                     print("---", data.decode('utf-8'))
                 
 
-                # TODO: test
                 data = data.decode('utf-8')
                 data = data.replace(' \r\n \r', '')
                 data_type = data[data.find("(")+1:data.find(")")]
 
                 print(colored("data:", 'blue'), data)
 
-                # data_separated = data[len(data_type)+2:].replace(" ", '').replace('\n', '')
                 data_separated = data[len(data_type)+2:].replace('\n', '').strip()
                 print(colored("data_separated:", 'red'), data_separated)
 
@@ -130,10 +122,8 @@ class CacheDriver(object):
                         else:
                             res_item += item
 
-                    # append last item
                     res.append(res_item)
 
-                    
                     print(colored("type data_res:", 'green'), type(res))
                     print(colored("data_res:", 'green'), res)
 
@@ -146,61 +136,38 @@ class CacheDriver(object):
                 elif data_type=='atom':
                     return None
 
-                # return data.decode('utf-8')
                 return data_separated
 
             elif self.cache_type=='redis':
                 return getattr(self.cache, command)(*args)
 
+
         def get_type(self):
+            """ Get cache type """
             return self.cache_type
+
 
         def __del__(self):
             print(sys.stderr, 'closing socket')
             try:
                 self.sock.close()
             except:
-                print("Error, socket in CacheDriver can't be closed!")
+                print("Exception, socket in CacheDriver can't be closed!")
 
 
         def __str__(self):
             return repr(self) + " : " + self.cache_type
 
     instance = {}
-    # cache_type = 'redis'
 
-    # def __init__(self, cache_type):
+
     def __init__(self):
+        # allow only 1 instance of redis and 1 instance of custom cache
         for cache_type in ["redis", "custom"]:
             if not cache_type in CacheDriver.instance:
                 CacheDriver.instance[cache_type] = CacheDriver.__OneCacheDriver(cache_type)
-            # self.cache_type = cache_type
-        # else:
-            # CacheDriver.instance[cache_type].cache_type = cache_type
-
+            
     def do(self, cache_type, command, args):
         return CacheDriver.instance[cache_type].do(command, args)
 
-    # def get_type(self):
-    #     return CacheDriver.instance[cache_type].get_type()
-    
-
-# https://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html
-# Example of singleton class design pattern:
-# class OnlyOne:
-#     class __OnlyOne:
-#         def __init__(self, arg):
-#             self.val = arg
-#         def __str__(self):
-#             return repr(self) + self.val
-
-#     instance = None
-
-#     def __init__(self, arg):
-#         if not OnlyOne.instance:
-#             OnlyOne.instance = OnlyOne.__OnlyOne(arg)
-#         else:
-#             OnlyOne.instance.val = arg
-
-#     def __getattr__(self, name):
-#         return getattr(self.instance, name)
+  

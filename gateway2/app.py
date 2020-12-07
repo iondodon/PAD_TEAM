@@ -67,6 +67,7 @@ SAVE_CACHE_RESPONSE = True
 
 response_caching = ResponseCaching()
 
+coordinator = TwoPhaseCommit()
 
 
 
@@ -97,10 +98,12 @@ async def index(request):
 
     
     print(colored("Test 2Phase Commit 2PC", "yellow"))
+    print(colored("service_addresses: " , "green"), data["service_addresses"])
 
     try:
-        coordinator = TwoPhaseCommit()
         res = coordinator.perform(data["service_addresses"])
+        print(colored("--res: ", "blue"), res)
+
         if res == "success":
             test_logger.info("2pc succeeded")
             return response.json({"status": "success", "message":"2pc succeeded"})

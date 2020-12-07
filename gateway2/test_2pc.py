@@ -5,4 +5,5 @@ if __name__ == '__main__':
 
 	coordinator = TwoPhaseCommit()
 
-	coordinator.perform(["http://google.com"])
+	# coordinator.perform(["http://google.com"])
+	coordinator.perform(["http://localhost:8001", "http://localhost:8000"])

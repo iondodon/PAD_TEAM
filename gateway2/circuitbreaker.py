@@ -1,6 +1,6 @@
 from errors_handling import CustomError
-# import requests
-import grequests
+# import requests # synchronous requests 
+import grequests # async requests
 
 from termcolor import colored
 from jsonrpcclient import request as rpc_request
@@ -60,26 +60,25 @@ class CircuitBreaker:
             test_logger.error("ERROR: TYPE_REQUESTS parameter '" + self.TYPE_REQUESTS +"' in circuitbreaker.py!!! not recognized."
                 + "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in class CircuitBreaker")
 
-            # return abort(500, {"error": "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in circuitbreaker!!!"})
             return {"status": "error", "message": "Please set TYPE_REQUESTS to 'HTTP' or 'RPC' in circuitbreaker!!!"}
         
 
         if self.tripped:
             self.remove_from_cache()
             # raise CustomError("Circuit breaker tripped")
-            # 503 - service unavailable
+
             test_logger.error("ERROR: CircuitBreaker tripped. No services available")
-            # return abort(503, {"error": "No services available. Circuit breaker tripped"})
             return {"status": "error", "message":"Circuit breaker tripped"}
 
         # pentru redis trebuie decode:
-        # endpoint = str(self.address.decode("utf-8") ) + str(params["path"]).replace("/", "")
-        if self.address is None or self.address=="":
+        if self.get_address() is None or self.get_address()=="":
             return {"status": "error", "message":"Service unavailable"}
 
-        endpoint = str(self.address) + str(params["path"]).replace("/", "")
+
+        endpoint = str(self.get_address()) + str(params["path"]).replace("/", "")
 
         print(colored("service endpoint:---" + endpoint, "cyan"))
+        test_logger.debug("service endpoint:---" + endpoint)
 
         last_error = ""
 
@@ -93,7 +92,7 @@ class CircuitBreaker:
                 print("-> route:", route)
                 test_logger.info("-> route:" + str(route))
 
-                r = rpc_request(str(self.address.decode("utf-8")), route).data.result
+                r = rpc_request(str(self.get_address()), route).data.result
 
                 print(colored("Response from service:----", "green"), r)
                 test_logger.info("Response from service:----" + str(r))
@@ -111,24 +110,28 @@ class CircuitBreaker:
                 r = None
 
                 if method=='GET':
+                    # syncronous requests for Flask:
                     # r = requests.get(endpoint, params=params["parameters"].decode("utf-8"))
                     # r = requests.get(endpoint, params=params["parameters"])
                     r = grequests.get(endpoint, params=params["parameters"])
                     rs = grequests.map([r], exception_handler=self.exception_handler)
                 
                 elif method=='POST':
+                    # syncronous requests for Flask:
                     # r = requests.post(endpoint, data=params["parameters"].decode("utf-8"), json=params["parameters"].decode("utf-8"))
                     # r = requests.post(endpoint, data=params["parameters"], json=params["parameters"])
                     r = grequests.post(endpoint, data=params["parameters"], json=params["parameters"])
                     rs = grequests.map([r], exception_handler=self.exception_handler)
                 
                 elif method=='PUT':
+                    # syncronous requests for Flask:
                     # r = requests.put(endpoint, data=params["parameters"].decode("utf-8"), json=params["parameters"].decode("utf-8"))
                     # r = requests.put(endpoint, data=params["parameters"], json=params["parameters"])
                     r = grequests.put(endpoint, data=params["parameters"], json=params["parameters"])
                     rs = grequests.map([r], exception_handler=self.exception_handler)
                 
                 elif method=='DELETE':
+                    # syncronous requests for Flask:
                     # r = requests.delete(endpoint)
                     r = grequests.delete(endpoint)
                     rs = grequests.map([r], exception_handler=self.exception_handler)
@@ -137,31 +140,22 @@ class CircuitBreaker:
                 print(colored("---rs:", "blue"), rs)
 
                 if rs and rs[0]:
-                    # json_response = [r.json() for res in rs]
                     json_response = rs[0].json()
-                    # json_response = r.json()
                 else:
                     json_response = {"error, rs is none"}
                 
 
                 test_logger.debug("Request: " + str(r))
                 print(r)    
-                # data = r.json()
-                # data = json.loads(r)
+
                 data = json_response
                 
                 test_logger.debug("Data: " + str(data))
                 print(data)
                 
-                # test_logger.debug("Response from service:" + str(r.json()))
-                # test_logger.debug("Response from service:" + json.loads(r))
                 test_logger.debug("Response from service:" + json_response)
-                # print(colored("Response from service:----", "green"), json.loads(r))
                 print(colored("Response from service:----", "green"), json_response)
 
-                # return r.json()
-                # return {"status": "success", "response": r.json()}
-                # return {"status": "success", "response": json.loads(r)}
                 
                 return {"status": "success", "response": json_response}
 
@@ -187,7 +181,6 @@ class CircuitBreaker:
                 cache_status = REDIS_CACHE_FAILED if SUCCESS else BOTH_CACHES_FAILED
 
 
-
             test_logger.error("ERROR: Request failed. " + str(e))
             print(colored("----Request failed:----", "red"), nr_requests_failed)
             print(e)
@@ -200,24 +193,20 @@ class CircuitBreaker:
                 self.tripped = True
 
 
-        # return {"status":"error", "message": "Request to service failed", "error":last_error}
-        test_logger.error("ERROR: Request to service of type " + str(self.service_type) + " failed")
-        # return abort(500, {"message":"Request to service failed", "error ":last_error})
+        test_logger.error("ERROR: Request to service of type " + str(self.service_type) + " failed. Error:" + str(last_error))
 
         return {"status": "error", "message":"Request to service failed. Error :" + last_error}
 
- 
-    def clear(self, address):
-        self.address = None
-
-
-    def get_redis_key(self):
-        # pentru redis trebuie decode!!! 
+    def get_address(self):
+        """ get address: for redis needs decode(), for custom cache not"""
         try:
             self.address = self.address.decode()
-            return "CB-" + self.address
+            return self.address
         except (UnicodeDecodeError, AttributeError):
-            return "CB-" + self.address
+            return self.address
+
+    def clear(self, address):
+        self.address = None
 
 
     def remove_from_cache(self):
@@ -229,7 +218,6 @@ class CircuitBreaker:
         cache = CacheDriver()
         try:
             cache.do("custom", 'lrem', ["services-"+str(self.service_type), self.address])
-            # cache.do("custom", 'delete', [self.get_redis_key()])
         except Exception as e:
             test_logger.error("ERROR: Custom cache delete command failed on key " + str(self.get_redis_key()))
             test_logger.error(str(e))
@@ -237,7 +225,6 @@ class CircuitBreaker:
 
         try:
             cache.do("redis", 'lrem', ["services-"+str(self.service_type), 1, self.address])
-            # cache.do("redis", 'delete', [self.get_redis_key()])
         except Exception as e:
             test_logger.error("ERROR: Redis cache delete command failed on key " + str(self.get_redis_key()))
             test_logger.error(e)
@@ -248,5 +235,10 @@ class CircuitBreaker:
             test_logger.error("ERROR: Alert! Both caches failed on delete command on key " + str(self.get_redis_key()))
 
 
-        # cache.lrem("services-"+str(self.service_type), 1, self.address)
-        # cache.delete(self.get_redis_key())
+    def get_redis_key(self):
+        # pentru redis trebuie decode, pentru custom cache nu trebuie:
+        try:
+            self.address = self.address.decode()
+            return "CB-" + self.address
+        except (UnicodeDecodeError, AttributeError):
+            return "CB-" + self.address
