@@ -186,8 +186,8 @@ def test_gateway_rpc():
 
 # do not forget to change parameter to 'HTTP' in circuitbreaker!
 def test_gateway_http():
-    # register_service("Service1", "http://127.0.0.1:6002/", "type1")
-    # register_service("Service2", "http://127.0.0.1:6001/", "type2")
+    register_service("Service1", "http://127.0.0.1:6002/", "type1")
+    register_service("Service2", "http://127.0.0.1:6001/", "type2")
     # register_service("Service1", "http://127.0.0.1:6004/", "type1")
 
     # register_service(service_name="Service2", address="http://127.0.0.1:6004/", service_type="type1")

@@ -29,9 +29,6 @@ from response_caching import ResponseCaching
 from time import sleep
 import json
 
-# import threading
-# import requests
-
 app = Sanic(__name__)
 
 jinja = SanicJinja2(app, autoescape=True)
@@ -120,12 +117,9 @@ async def index(request):
 @app.route('/<path>', methods=['GET', 'POST'])
 async def router(request, path):    
     test_logger.info("----Request to path:" + path)
-    # print(colored("----Request to path:" + path, "yellow"))
-
     # NOTE: RPC works only with underscore(_) request, but new feature added that gateway can process both _ and - request, so we allow both
     # TODO!!! Change request paths to custom services we use!!!
     
-
     if not gateway.is_path_allowed(path):
         test_logger.error("ERROR: Page not found. Path " + path + " is not in allowed paths.")
         return abort(404)
@@ -137,10 +131,8 @@ async def router(request, path):
         data = request.args
         method = "GET"
     elif request.method == 'POST':
-        # data = request.data
         data = request.json
         method = "POST"
-        # data = request.form
     else:
         data = request.data
 
@@ -156,12 +148,6 @@ async def router(request, path):
     else:
         print(colored("Not in cache, make request:---", "cyan"))
 
-        # response = requests.get(path, params=data)
-        # print("-- reponse:", response.content)  
-        # print(colored("-- reponse code:" + str( response.status_code), "blue"))
-
-
-
         r = await gateway.make_next_request(path, service_type, data, method)
         sleep(0.3)
 
@@ -169,19 +155,11 @@ async def router(request, path):
             if "message" in r:
                 if r["message"]=="No services available":
                     return abort(503, {"error": r["message"]})
-                # else
                 return abort(500, {"error": r["message"]})
-            # else
             return abort(500)
-        # else
-
-        # response_caching.save_response(path, data, response.json(r))
-        # response_caching.save_response(path, data, r)
-        # response_caching.save_response(path, data, response.html(r))
 
         print(colored(">>>r:", "cyan", "on_grey"), r["response"])
-            
-        # !!!!!!!!!!!TODO: makw this work!!!!!!!! - response caching
+
         if SAVE_CACHE_RESPONSE:
             try:
                 response_caching.save_response(path, data, str(r["response"]))
@@ -190,41 +168,29 @@ async def router(request, path):
 
 
     return response.json(r["response"])
-    # return r
 
 
 
 
 @app.route('/service-register', methods=['POST'])
 async def service_register(request):    
-    # print(request.data)
-    # print(request.json)
     test_logger.info("Service discovered!")
-    # print("Service discovered!")
 
     service_name = request.json["service_name"]
     service_address = request.json["address"]
     service_type = request.json["type"]
 
     if service_type not in ["type1", "type2"]:
-        # return {"status":"error", "message": "service_type should be type1 or type2"}
-        # 400 bad request
         test_logger.error("ERROR: Service type " + str(service_type) + " not recognized. Service type should be type1 or type2")
         return abort(400, {"error": "service_type should be type1 or type2"})
 
     test_logger.debug("service name: " + str(service_name))
     test_logger.debug("service address: " + str(service_address))
     test_logger.debug("service type: " + str(service_type))
-    # print(colored("service name:", "red"), service_name)
-    # print(colored("service address:", "red"), service_address)
-    # print(colored("service type:", "red"), service_type)
     
     #################################
-    # TODO: test and add in cache - last time up, pentru alte requesturi de ex. get, verifici daca rezultatele sunt diferite
-    # la ambele cache-uri, atunci vezi care din ele a fost mai recent up si inseamna ca il sincronizezi cu celelalt
-    # TODO: de modificat dupa acest model sa lucreze peste tot unde este cache!! (active-active replication)
+    
     try:
-        # cache = CacheDriver('redis')
         cache_status = SUCCESS
 
         cache = CacheDriver()
@@ -265,9 +231,6 @@ async def service_register(request):
 async def get_registered_services(request):
     result = {}
 
-    
-    # l_type1 = cache.lrange('services-type1', 0, -1)
-    # l_type2 = cache.lrange('services-type2', 0, -1)
     cache = CacheDriver()
     try:
         l_type1 = cache.do("custom", 'lrange', ['services-type1', 0, -1])
@@ -286,7 +249,6 @@ async def get_registered_services(request):
             
         except Exception as e:
             test_logger.error("ERROR: Alert! Both caches failed on command lrange!!!." + str(e))
-            # return abort(500, "Error: Both caches failed!")
             return response.json({"registered_services-type1": [], "registered_services-type2": [], "status": "Both caches failed so no available service for now"})
 
 
@@ -306,7 +268,6 @@ async def get_registered_services(request):
 
     test_logger.info({"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)})
     return response.json({"registered_services-type1": str(result_type1), "registered_services-type2": str(result_type2)})
-
 
 
 
